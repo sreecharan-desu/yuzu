@@ -1,0 +1,5 @@
+build/
+dist/
+Yuzu.xcodeproj/
+.DS_Store
+*.xcuserstate
