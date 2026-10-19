@@ -35,7 +35,7 @@
 	<key>NSDownloadsFolderUsageDescription</key>
 	<string>Yuzu saves converted copies next to the files you drop in Downloads.</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Yuzu. A personal build for Sreecharan. All processing stays on this Mac.</string>
+	<string>© 2026 Sreecharan Desu. MIT License.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 </dict>

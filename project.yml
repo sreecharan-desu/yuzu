@@ -7,8 +7,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "1.0.0"
-    CURRENT_PROJECT_VERSION: "3"
+    MARKETING_VERSION: "1.1.0"
+    CURRENT_PROJECT_VERSION: "4"
     CODE_SIGN_IDENTITY: "-"
     CODE_SIGN_STYLE: Manual
     DEVELOPMENT_TEAM: ""
@@ -36,7 +36,7 @@ targets:
         LSUIElement: true
         NSPrincipalClass: NSApplication
         LSApplicationCategoryType: public.app-category.utilities
-        NSHumanReadableCopyright: "Yuzu. A personal build for Sreecharan. All processing stays on this Mac."
+        NSHumanReadableCopyright: "© 2026 Sreecharan Desu. MIT License."
         NSDesktopFolderUsageDescription: "Yuzu saves converted copies next to the files you drop, including on your Desktop."
         NSDocumentsFolderUsageDescription: "Yuzu saves converted copies next to the files you drop in Documents."
         NSDownloadsFolderUsageDescription: "Yuzu saves converted copies next to the files you drop in Downloads."

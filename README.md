@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/hero.png" width="100%" alt="The Convert ring open under the pointer on a quiet desktop, with a saved confirmation below">
+  <img src="docs/hero.jpg" width="100%" alt="The Convert ring open under the pointer on a quiet desktop, with a saved confirmation below">
 </p>
 
 Yuzu is a small, native menu bar app for macOS. While you drag any file, tap a modifier key and a
@@ -46,18 +46,21 @@ result is saved next to the original. Nothing is uploaded anywhere.
 - **Light.** About 0.1% CPU and 75 MB of memory when idle.
 
 <p align="center">
-  <img src="docs/screenshots/ring-tools-light.png" width="49%" alt="Tools ring in light mode">
-  <img src="docs/screenshots/ring-actions-dark.png" width="49%" alt="Actions ring in dark mode">
+  <img src="docs/screenshots/ring-tools-light.jpg" width="49%" alt="Tools ring in light mode">
+  <img src="docs/screenshots/ring-actions-dark.jpg" width="49%" alt="Actions ring in dark mode">
 </p>
 <p align="center">
-  <img src="docs/screenshots/add-background.png" width="49%" alt="Add Background framing a screenshot on the Pearl backdrop">
-  <img src="docs/screenshots/float.png" width="49%" alt="Float shelf docked to the right edge, with the parked tab on the left">
+  <img src="docs/screenshots/add-background.jpg" width="49%" alt="Add Background framing a screenshot on the Pearl backdrop">
+  <img src="docs/screenshots/float.jpg" width="49%" alt="Float shelf docked to the right edge, with the parked tab on the left">
 </p>
 
 ## Install
 
 1. Download **Yuzu.dmg** from the [latest release](https://github.com/sreecharan-desu/yuzu/releases/latest).
 2. Open it and drag **Yuzu** into **Applications**.
+
+<p align="center"><img src="docs/screenshots/dmg-window.png" width="62%" alt="The Yuzu disk image window: drag Yuzu to Applications"></p>
+
 3. Open Yuzu from Applications. It's ad-hoc signed, not notarized, so the first time macOS will say it
    can't verify the developer:
    - Open **System Settings > Privacy & Security**, scroll to the message about Yuzu, click **Open Anyway**, and confirm.
@@ -96,7 +99,7 @@ The welcome window and **Settings > About** show which helpers Yuzu found.
 - Results are saved next to the original with a new name. Originals are never changed.
 - Change the keys in **Settings > Shortcuts**: click a shortcut, press the modifier keys you want, release.
 
-<p align="center"><img src="docs/screenshots/onboarding.png" width="80%" alt="Welcome window"></p>
+<p align="center"><img src="docs/screenshots/onboarding.jpg" width="80%" alt="Welcome window"></p>
 
 ### Permissions
 

@@ -6,8 +6,17 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+### Planned
+- More conversion paths: image to DOCX, Pages, Keynote and Numbers export, RAR extraction.
+- Collage, video snapshot, export GIF tool, audio visualizer and trim silence.
+- Dragging several Float items out at once, rubber-band selection and Quick Look in Float.
+
+## [1.1.0] - 2026-10-19
+
+A redesign. Same features, a calmer and more consistent look.
+
 ### Changed
-- New identity: the Ring mark, in ink and pearl, with a matching menu bar glyph.
+- New app icon: the Ring mark, in ink and pearl, with a matching monochrome menu bar glyph.
 - A design system for every surface: ink on white (inverted in dark mode), three neutral steps,
   hairline borders, an 8 pt grid, three radii plus pills, one type scale, shadow and motion tokens.
 - The ring, toasts, tool panels, Add Background, Float, the welcome window and Settings now use it.
@@ -15,13 +24,14 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Primary buttons are ink pills with a slow, restrained hover; panel content arrives with a short
   blur-to-sharp reveal (off when Reduce Motion is on).
 - Backdrops: a curated set of eight (Pearl, Mist, Linen, Haze, Stone, Graphite, Ink, Match) replaces
-  the 19 mesh, bokeh and frost styles. Saved styles that used a removed backdrop map to the closest one.
-- Quieter colour swatches and gradients in Add Background, and a minimal disk image background.
+  the 19 mesh, bokeh and frost styles, with perceptual colour blending and fine grain. Saved styles
+  that used a removed backdrop map to the closest one.
+- Quieter colour swatches and gradients in Add Background.
+- A minimal disk image window, and new README screenshots.
+- About box credit now reads "© 2026 Sreecharan Desu. MIT License."
 
-### Planned for 1.1
-- More conversion paths: image to DOCX, Pages, Keynote and Numbers export, RAR extraction.
-- Collage, video snapshot, export GIF tool, audio visualizer and trim silence.
-- Dragging several Float items out at once, rubber-band selection and Quick Look in Float.
+### Performance
+- Smaller download: the disk image is 3.3 MB, down from 4.6 MB.
 
 ## [1.0.0] - 2026-10-19
 
@@ -44,5 +54,6 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   HEIC to JPEG about 4x faster, WebP about 2x faster.
 - Quick Look thumbnails are cached.
 
-[Unreleased]: https://github.com/sreecharan-desu/yuzu/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/sreecharan-desu/yuzu/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/sreecharan-desu/yuzu/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/sreecharan-desu/yuzu/releases/tag/v1.0.0
