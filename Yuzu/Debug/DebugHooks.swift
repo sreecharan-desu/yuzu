@@ -92,6 +92,37 @@ final class DebugHooks {
                 }
                 self.log.info("snapshot written \(path, privacy: .public)")
             }
+        case "batch":
+            guard let dir = info["dir"], let out = info["out"] else { return }
+            runBatch(dir: URL(fileURLWithPath: dir), report: URL(fileURLWithPath: out),
+                     skipIWork: info["iwork"] != "1", only: info["only"])
+        case "latency":
+            // Opens and closes the ring n times through the same path a key tap uses and records latency.
+            let n = Int(info["n"] ?? "10") ?? 10
+            let wheel = WheelController.shared
+            let f = NSScreen.main?.frame ?? .zero
+            let items = DemoFiles.sampleImage().map { [$0] } ?? []
+            var results: [Double] = []
+            func step(_ i: Int) {
+                guard i < n else {
+                    wheel.onLatency = nil
+                    let sorted = results.sorted()
+                    let line = results.map { String(format: "%.2f", $0) }.joined(separator: ",")
+                    let summary = String(format: "n=%d min=%.2f median=%.2f max=%.2f ms | %@", n, sorted.first ?? 0,
+                                         sorted.isEmpty ? 0 : sorted[sorted.count / 2], sorted.last ?? 0, line)
+                    try? summary.write(toFile: NSTemporaryDirectory() + "yuzu-latency.txt", atomically: true, encoding: .utf8)
+                    return
+                }
+                wheel.onLatency = { ms in
+                    results.append(ms)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                        wheel.close()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { step(i + 1) }
+                    }
+                }
+                wheel.handleTap(kind: .convert, items: items, at: NSPoint(x: f.midX, y: f.midY))
+            }
+            step(0)
         case "toast":
             let hud = HUDController.shared
             let f = NSScreen.main?.frame ?? .zero
@@ -118,5 +149,43 @@ final class DebugHooks {
         default:
             break
         }
+    }
+
+    /// Runs every convert option for every file in `dir`, one after another, and writes a TSV report:
+    /// source, option id, status, output path, seconds, progress event count, message.
+    private func runBatch(dir: URL, report: URL, skipIWork: Bool, only: String?) {
+        let files = ((try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil)) ?? [])
+            .filter { !$0.lastPathComponent.hasPrefix(".") }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+        var queue: [(URL, WheelOption)] = []
+        for f in files {
+            if let only, !f.lastPathComponent.contains(only) { continue }
+            for o in Catalog.options(for: .convert, items: [f]).options {
+                if case .fileAction = o.action { continue }
+                if skipIWork, ["file.pages", "file.key", "file.numbers"].contains(o.id) { continue }
+                queue.append((f, o))
+            }
+        }
+        var lines = ["source\toption\tstatus\toutput\tseconds\tprogress_events\tmessage"]
+        let total = queue.count
+        log.error("batch: \(total) jobs")
+        func next() {
+            guard !queue.isEmpty else {
+                try? (lines.joined(separator: "\n") + "\n").write(to: report, atomically: true, encoding: .utf8)
+                HUDController.shared.success("Batch finished", detail: "\(total) jobs")
+                return
+            }
+            let (f, o) = queue.removeFirst()
+            HUDController.shared.begin(title: "Batch \(total - queue.count)/\(total): \(f.lastPathComponent) → \(o.title)", near: NSPoint(x: 200, y: 200))
+            JobRunner.run(o, urls: [f], near: .zero, reveal: false, quiet: true) { r in
+                let ok = !r.outputs.isEmpty && r.errors.isEmpty
+                let msg = r.errors.joined(separator: " | ").replacingOccurrences(of: "\t", with: " ").replacingOccurrences(of: "\n", with: " ")
+                lines.append([f.lastPathComponent, o.id, ok ? "OK" : "ERR", r.outputs.first?.path ?? "",
+                              String(format: "%.3f", r.seconds), "\(r.progressEvents)", msg].joined(separator: "\t"))
+                try? (lines.joined(separator: "\n") + "\n").write(to: report, atomically: true, encoding: .utf8)
+                next()
+            }
+        }
+        next()
     }
 }

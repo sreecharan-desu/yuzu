@@ -5,9 +5,10 @@ cd "$(dirname "$0")/.."
 xcodegen generate --quiet
 xcodebuild -project Yuzu.xcodeproj -scheme Yuzu -configuration Release \
   -derivedDataPath build/DerivedData -destination 'platform=macOS,arch=arm64' \
-  CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= build -quiet 2>&1 | grep -v '^$' || true
+  CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= build -quiet > build/xcodebuild.log 2>&1 && st=0 || st=$?
+grep -E 'error:|warning:' build/xcodebuild.log | grep -v 'exit code 0 but produced' | sort -u || true
 APP=build/DerivedData/Build/Products/Release/Yuzu.app
-[ -d "$APP" ] || { echo "build failed"; exit 1; }
+[ "$st" -eq 0 ] && [ -d "$APP" ] || { echo "build failed (xcodebuild exit $st)"; exit 1; }
 mkdir -p dist build/bin
 rm -rf dist/Yuzu.app
 cp -R "$APP" dist/

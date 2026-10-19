@@ -46,6 +46,41 @@ final class WheelController {
     private var pendingClose: DispatchWorkItem?
     private var demoClose: DispatchWorkItem?
 
+    // Latency probe: time from the tap to the first display refresh after the ring is on screen.
+    private var openStart: CFTimeInterval = 0
+    private var probe: CADisplayLink?
+    private(set) var latencies: [Double] = []
+    var onLatency: ((Double) -> Void)?
+
+    /// Builds the panel, SwiftUI tree and glass material ahead of time so the first tap is as fast as later ones.
+    func prewarm() {
+        // Load a real image so thumbnails, petals, glass and the hub all render once offscreen.
+        model.load(kind: .convert, items: DemoFiles.sampleImage().map { [$0] } ?? [])
+        model.isOpen = true
+        let p = panel
+        p.alphaValue = 0
+        p.setFrameOrigin(NSPoint(x: -10_000, y: -10_000))
+        p.orderFrontRegardless()
+        p.contentView?.layoutSubtreeIfNeeded()
+        p.display()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+            guard let self, !self.isShowing else { return }
+            self.model.isOpen = false
+            p.orderOut(nil)
+            p.alphaValue = 1
+        }
+        Feedback.shared.warmUp()
+    }
+
+    @objc private func probeTick(_ link: CADisplayLink) {
+        let ms = (CACurrentMediaTime() - openStart) * 1000
+        link.invalidate()
+        probe = nil
+        latencies.append(ms)
+        onLatency?(ms)
+        log.notice("ring open latency \(ms, format: .fixed(precision: 2)) ms")
+    }
+
     private func makePanel() -> WheelPanel {
         let size = Theme.canvas
         let p = WheelPanel(contentRect: NSRect(x: 0, y: 0, width: size, height: size),
@@ -75,6 +110,7 @@ final class WheelController {
     // MARK: - Opening
 
     func handleTap(kind: WheelKind, items: [URL], at point: NSPoint) {
+        openStart = CACurrentMediaTime()
         if isShowing {
             if kind == model.kind { return }         // already showing this ring
             model.load(kind: kind, items: items.isEmpty ? model.items : items)
@@ -103,7 +139,12 @@ final class WheelController {
         panel.alphaValue = 1
         panel.orderFrontRegardless()
         isShowing = true
-        Feedback.shared.warmUp()
+        probe?.invalidate()
+        if let view = panel.contentView {
+            let link = view.displayLink(target: self, selector: #selector(probeTick(_:)))
+            link.add(to: .main, forMode: .common)
+            probe = link
+        }
         DispatchQueue.main.async {
             self.model.isOpen = true
             Feedback.shared.bloom()

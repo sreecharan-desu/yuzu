@@ -21,6 +21,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         monitor.start()
         dragMonitor = monitor
         debugHooks = DebugHooks(menuBar: menuBar)
+        if !UserDefaults.standard.bool(forKey: "debug.noPrewarm") {
+            DispatchQueue.main.async { wheel.prewarm() }
+        }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

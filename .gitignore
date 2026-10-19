@@ -1,5 +1,7 @@
+*.xcuserstate
+.DS_Store
+TestFiles/batch/
+TestFiles/run1/
+Yuzu.xcodeproj/
 build/
 dist/
-Yuzu.xcodeproj/
-.DS_Store
-*.xcuserstate

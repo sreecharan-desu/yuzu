@@ -53,12 +53,13 @@ enum ToolLocator {
     /// Runs a tool and waits, optionally streaming stdout lines. Honors job cancellation and a timeout.
     @discardableResult
     static func run(_ tool: String, _ args: [String], ctx: JobContext? = nil, timeout: TimeInterval = 600,
-                    env: [String: String] = [:], onLine: (@Sendable (String) -> Void)? = nil,
+                    env: [String: String] = [:], cwd: URL? = nil, onLine: (@Sendable (String) -> Void)? = nil,
                     check: Bool = true) throws -> Result {
         try ctx?.checkCancelled()
         let p = Process()
         p.executableURL = URL(fileURLWithPath: tool)
         p.arguments = args
+        if let cwd { p.currentDirectoryURL = cwd }
         var environment = ProcessInfo.processInfo.environment
         environment["PATH"] = (searchPaths + ["/bin", "/usr/sbin", "/sbin"]).joined(separator: ":")
         for (k, v) in env { environment[k] = v }
@@ -205,4 +206,15 @@ enum Scratch {
     }
 
     static func cleanup(_ url: URL) { try? FileManager.default.removeItem(at: url) }
+
+    /// Removes the whole scratch job folder that contains `url` (no-op for files outside scratch).
+    static func cleanupJob(containing url: URL) {
+        let tmp = root.appendingPathComponent("tmp", isDirectory: true).standardizedFileURL.path
+        var u = url.standardizedFileURL
+        while u.path.count > tmp.count {
+            let parent = u.deletingLastPathComponent()
+            if parent.path == tmp { cleanup(u); return }
+            u = parent
+        }
+    }
 }

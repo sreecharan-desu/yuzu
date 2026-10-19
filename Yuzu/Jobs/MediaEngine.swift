@@ -73,7 +73,7 @@ enum MediaEngine {
         case .m4a: return ["-vn", "-c:a", "aac", "-b:a", "192k"]
         case .wav: return ["-vn", "-c:a", "pcm_s16le"]
         case .flac: return ["-vn", "-c:a", "flac"]
-        case .ogg: return ["-vn", "-c:a", "vorbis", "-strict", "-2", "-q:a", "5"]
+        case .ogg: return ["-vn", "-c:a", "vorbis", "-strict", "-2", "-ac", "2", "-q:a", "5"]  // native vorbis encoder is stereo-only
         case .opus: return ["-vn", "-c:a", "libopus", "-b:a", "128k"]
         case .aiff: return ["-vn", "-c:a", "pcm_s16be"]
         case .wma: return ["-vn", "-c:a", "wmav2", "-b:a", "192k"]
