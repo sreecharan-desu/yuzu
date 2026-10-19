@@ -99,7 +99,7 @@ enum FileAction: String, CaseIterable, Sendable {
 
     var symbol: String {
         switch self {
-        case .airDrop: return "airplayaudio"
+        case .airDrop: return "dot.radiowaves.left.and.right"
         case .float: return "paperclip"
         case .copy: return "doc.on.doc"
         case .move: return "folder"

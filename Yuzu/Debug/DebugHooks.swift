@@ -18,6 +18,30 @@ final class DebugHooks {
         }
     }
 
+    static func render(_ view: NSView, to path: String, backdrop: String?) {
+        guard let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return }
+        view.cacheDisplay(in: view.bounds, to: rep)
+        let size = view.bounds.size
+        let scale = CGFloat(rep.pixelsWide) / max(size.width, 1)
+        let out = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: rep.pixelsWide, pixelsHigh: rep.pixelsHigh,
+                                   bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                   colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+        out.size = size
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: out)
+        let rect = NSRect(origin: .zero, size: size)
+        if let bg = backdrop, let img = NSImage(contentsOfFile: bg) {
+            // aspect-fill
+            let s = max(size.width / img.size.width, size.height / img.size.height)
+            let w = img.size.width * s, h = img.size.height * s
+            img.draw(in: NSRect(x: (size.width - w) / 2, y: (size.height - h) / 2, width: w, height: h))
+        }
+        rep.draw(in: rect)
+        NSGraphicsContext.restoreGraphicsState()
+        _ = scale
+        try? out.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: path))
+    }
+
     private func handle(_ info: [String: String]) {
         log.info("debug command \(info["cmd"] ?? "?", privacy: .public)")
         switch info["cmd"] {
@@ -46,6 +70,29 @@ final class DebugHooks {
                 try? report.write(toFile: NSTemporaryDirectory() + "yuzu-last-job.txt", atomically: true, encoding: .utf8)
                 self.log.info("job result: \(report, privacy: .public)")
             }
+        case "snapshot":
+            // Self-render of Yuzu's own window (no screen capture). Glass is approximated by the backdrop image.
+            let target = info["target"] ?? "wheel"
+            let path = info["path"] ?? (NSTemporaryDirectory() + "yuzu-\(target).png")
+            let delay = info["delay"].flatMap(Double.init) ?? 0.8
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                let window: NSWindow? = target == "settings" ? SettingsWindowController.shared.window
+                    : (target == "hud" ? HUDController.shared.panelForSnapshot : WheelController.shared.panelForSnapshot)
+                guard let view = window?.contentView else { return }
+                let wheel = WheelController.shared.model
+                if target == "wheel" {
+                    wheel.snapshotBackdrop = info["bg"].flatMap { NSImage(contentsOfFile: $0) }
+                    wheel.snapshotScheme = info["appearance"] == "light" ? .light : (info["appearance"] == "dark" ? .dark : nil)
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                    Self.render(view, to: path, backdrop: target == "wheel" ? nil : info["bg"])
+                    wheel.snapshotBackdrop = nil
+                    wheel.snapshotScheme = nil
+                }
+                self.log.info("snapshot written \(path, privacy: .public)")
+            }
+        case "closeSettings":
+            SettingsWindowController.shared.window?.performClose(nil)
         case "quit":
             NSApp.terminate(nil)
         default:

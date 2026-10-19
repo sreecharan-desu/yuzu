@@ -199,6 +199,8 @@ final class WheelController {
         DispatchQueue.main.asyncAfter(deadline: .now() + duration, execute: item)
     }
 
+    var panelForSnapshot: NSWindow { panel }
+
     /// For the hover cycle in the demo.
     func demoHover(_ idx: Int?) { setHover(idx) }
 }

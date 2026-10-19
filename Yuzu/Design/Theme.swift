@@ -17,7 +17,7 @@ enum Theme {
     static let petalCorner: CGFloat = 17
     static let canvas: CGFloat = 400             // panel size around the wheel
     static let maxPetals = 8
-    static let minSlots = 6
+    static let minSlots = 4
 
     // Motion
     static let bloom = Animation.spring(response: 0.36, dampingFraction: 0.74)

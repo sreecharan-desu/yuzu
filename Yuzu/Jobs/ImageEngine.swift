@@ -96,9 +96,21 @@ enum ImageEngine {
         var box = CGRect(x: 0, y: 0, width: Double(image.width) * 72 / dpi, height: Double(image.height) * 72 / dpi)
         guard let ctx = CGContext(dest as CFURL, mediaBox: &box, nil) else { throw YuzuError.writeFailed(dest.lastPathComponent) }
         ctx.beginPDFPage(nil)
-        ctx.draw(image, in: box)
+        ctx.draw(pdfEmbeddable(image), in: box)
         ctx.endPDFPage()
         ctx.closePDF()
+    }
+
+    /// Opaque photos are embedded as JPEG (DCT) so PDFs stay small; images with alpha stay lossless.
+    private static func pdfEmbeddable(_ image: CGImage) -> CGImage {
+        guard !hasAlpha(image) else { return image }
+        let data = NSMutableData()
+        guard let d = CGImageDestinationCreateWithData(data, UTType.jpeg.identifier as CFString, 1, nil) else { return image }
+        CGImageDestinationAddImage(d, image, [kCGImageDestinationLossyCompressionQuality: 0.9] as CFDictionary)
+        guard CGImageDestinationFinalize(d), let provider = CGDataProvider(data: data),
+              let jpeg = CGImage(jpegDataProviderSource: provider, decode: nil, shouldInterpolate: true, intent: .defaultIntent)
+        else { return image }
+        return jpeg
     }
 
     private static func writeWebPWithCwebp(_ image: CGImage, to dest: URL, quality: Double) throws {

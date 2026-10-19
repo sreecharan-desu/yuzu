@@ -52,6 +52,8 @@ final class HUDController {
         p.orderFrontRegardless()
     }
 
+    var panelForSnapshot: NSWindow? { panel }
+
     func begin(title: String, detail: String, near point: NSPoint) {
         hideWork?.cancel()
         model.title = title
