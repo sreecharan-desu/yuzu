@@ -10,11 +10,11 @@ enum Theme {
 
     // Wheel geometry (points)
     static let wheelDiameter: CGFloat = 320
-    static let ringPadding: CGFloat = 9          // glass ring visible outside petals
+    static let ringPadding: CGFloat = 8          // glass ring visible outside petals
     static let hubDiameter: CGFloat = 118
     static let hubGap: CGFloat = 8               // space between hub and petals
-    static let petalGap: CGFloat = 7
-    static let petalCorner: CGFloat = 17
+    static let petalGap: CGFloat = 10
+    static let petalCorner: CGFloat = 24
     static let canvas: CGFloat = 400             // panel size around the wheel
     static let maxPetals = 8
     static let minSlots = 4

@@ -117,7 +117,8 @@ private struct PetalView: View {
                                                 startPoint: .top, endPoint: .bottom))
         }
         if option == nil { return AnyShapeStyle(Color.white.opacity(dark ? 0.04 : 0.22)) }
-        return AnyShapeStyle(Color.white.opacity(dark ? (enabled ? 0.13 : 0.06) : (enabled ? 0.62 : 0.32)))
+        if dark { return AnyShapeStyle(Color.white.opacity(enabled ? 0.14 : 0.06)) }
+        return AnyShapeStyle(Color(red: 1.0, green: 0.96, blue: 0.90).opacity(enabled ? 0.74 : 0.36))
     }
 
     @ViewBuilder
