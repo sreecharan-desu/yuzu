@@ -92,7 +92,7 @@ enum MediaEngine {
 
     static func probeDuration(_ url: URL) -> Double {
         let asset = AVURLAsset(url: url)
-        let d = CMTimeGetSeconds(asset.duration)
+        let d = ((try? AsyncBridge.run { try await asset.load(.duration) }) ?? .zero).seconds
         if d.isFinite, d > 0 { return d }
         if let probe = ToolLocator.ffprobe,
            let r = try? ToolLocator.run(probe, ["-v", "error", "-show_entries", "format=duration", "-of", "default=nw=1:nk=1", url.path]),
@@ -104,25 +104,37 @@ enum MediaEngine {
 
     private static func exportNatively(_ src: URL, to dest: URL, fileType: AVFileType, audioOnly: Bool, ctx: JobContext) throws {
         let asset = AVURLAsset(url: src)
-        guard asset.isExportable, asset.isPlayable else { throw YuzuError.unsupported("Not readable by AVFoundation") }
-        if audioOnly, asset.tracks(withMediaType: .audio).isEmpty { throw YuzuError.tool("This file has no audio track.") }
+        let (exportable, playable, audio) = try AsyncBridge.run {
+            try await (asset.load(.isExportable), asset.load(.isPlayable), asset.loadTracks(withMediaType: .audio))
+        }
+        guard exportable, playable else { throw YuzuError.unsupported("Not readable by AVFoundation") }
+        if audioOnly, audio.isEmpty { throw YuzuError.tool("This file has no audio track.") }
         let preset = audioOnly ? AVAssetExportPresetAppleM4A : AVAssetExportPresetHighestQuality
         guard let session = AVAssetExportSession(asset: asset, presetName: preset),
               session.supportedFileTypes.contains(fileType) else {
             throw YuzuError.unsupported("No native export for this file")
         }
-        session.outputURL = dest
-        session.outputFileType = fileType
         session.shouldOptimizeForNetworkUse = fileType == .mp4
-        let done = DispatchSemaphore(value: 0)
-        session.exportAsynchronously { done.signal() }
-        while done.wait(timeout: .now() + 0.15) == .timedOut {
-            if ctx.isCancelled { session.cancelExport() }
-            ctx.report(Double(session.progress))
+        nonisolated(unsafe) let s = session
+        let progress = Task.detached {
+            for await state in s.states(updateInterval: 0.15) {
+                if case .exporting(let p) = state { ctx.report(p.fractionCompleted) }
+            }
+        }
+        defer { progress.cancel() }
+        let watcher = Task.detached {
+            while !Task.isCancelled {
+                if ctx.isCancelled { s.cancelExport(); return }
+                try? await Task.sleep(for: .milliseconds(150))
+            }
+        }
+        defer { watcher.cancel() }
+        do {
+            try AsyncBridge.run { try await s.export(to: dest, as: fileType) }
+        } catch {
+            try ctx.checkCancelled()
+            throw error
         }
         try ctx.checkCancelled()
-        if session.status != .completed {
-            throw session.error ?? YuzuError.writeFailed(dest.lastPathComponent)
-        }
     }
 }

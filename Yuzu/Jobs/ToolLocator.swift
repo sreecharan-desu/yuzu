@@ -144,15 +144,31 @@ final class JobContext: @unchecked Sendable {
     private let lock = NSLock()
     private var cancelled = false
     private var process: Process?
+    private weak var parent: JobContext?
+    private var children: [JobContext] = []
     var onProgress: (@Sendable (Double) -> Void)?
 
     init(settings: ImageSettings) { self.settings = settings }
 
-    var isCancelled: Bool { lock.lock(); defer { lock.unlock() }; return cancelled }
+    /// A context for one unit of a parallel job: it has its own process and progress, and cancelling the
+    /// parent cancels every child.
+    func child() -> JobContext {
+        let c = JobContext(settings: settings)
+        c.parent = self
+        lock.lock(); children.append(c); let dead = cancelled; lock.unlock()
+        if dead { c.cancel() }
+        return c
+    }
+
+    var isCancelled: Bool {
+        lock.lock(); let c = cancelled; lock.unlock()
+        return c || (parent?.isCancelled ?? false)
+    }
 
     func cancel() {
-        lock.lock(); cancelled = true; let p = process; lock.unlock()
+        lock.lock(); cancelled = true; let p = process; let kids = children; lock.unlock()
         if let p, p.isRunning { p.terminate() }
+        kids.forEach { $0.cancel() }
     }
 
     func attach(_ p: Process) {

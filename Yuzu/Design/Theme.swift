@@ -20,10 +20,12 @@ enum Theme {
     static let minSlots = 4
 
     // Motion
-    static let bloom = Animation.spring(response: 0.36, dampingFraction: 0.74)
-    static let petalBloom = Animation.spring(response: 0.42, dampingFraction: 0.70)
-    static let hover = Animation.spring(response: 0.20, dampingFraction: 0.66)
-    static let close = Animation.easeIn(duration: 0.14)
+    // Tuned for v1: a quicker, slightly firmer bloom (settles in about 0.3 s with a small overshoot),
+    // petals that trail the ring by a hair, and a snappy hover that does not wobble.
+    static let bloom = Animation.spring(response: 0.30, dampingFraction: 0.78)
+    static let petalBloom = Animation.spring(response: 0.34, dampingFraction: 0.74)
+    static let hover = Animation.spring(response: 0.16, dampingFraction: 0.72)
+    static let close = Animation.easeIn(duration: 0.12)
 
     static var outerRadius: CGFloat { wheelDiameter / 2 - ringPadding }
     static var innerRadius: CGFloat { hubDiameter / 2 + hubGap }

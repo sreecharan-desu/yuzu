@@ -51,6 +51,12 @@ final class WheelController {
     private var probe: CADisplayLink?
     private(set) var latencies: [Double] = []
     var onLatency: ((Double) -> Void)?
+    /// Time from the tap to the bloom animation starting (the state flip SwiftUI animates from).
+    private(set) var bloomStarts: [Double] = []
+    var stageLog: [String] = []
+    /// Test-only: open the ring silently, nearly transparent and behind every other window, so a latency
+    /// run is invisible (an off-screen window gets no display-link callbacks, so it must stay on a screen).
+    var offscreenTest = false
 
     /// Builds the panel, SwiftUI tree and glass material ahead of time so the first tap is as fast as later ones.
     func prewarm() {
@@ -124,8 +130,10 @@ final class WheelController {
         pendingClose?.cancel()
         demoClose?.cancel()
         isDropping = false
+        let t0 = CACurrentMediaTime()
         model.load(kind: kind, items: items)
         model.isOpen = false
+        let t1 = CACurrentMediaTime()
 
         let screen = NSScreen.screens.first { NSMouseInRect(point, $0.frame, false) } ?? NSScreen.main
         let size = Theme.canvas
@@ -136,8 +144,18 @@ final class WheelController {
         }
         center = NSPoint(x: origin.x + size / 2, y: origin.y + size / 2)
         panel.setFrame(NSRect(origin: origin, size: NSSize(width: size, height: size)), display: false)
-        panel.alphaValue = 1
-        panel.orderFrontRegardless()
+        if offscreenTest {
+            panel.level = .normal
+            panel.alphaValue = 0.02
+            panel.ignoresMouseEvents = true
+            panel.orderBack(nil)
+        } else {
+            panel.level = .popUpMenu
+            panel.alphaValue = 1
+            panel.ignoresMouseEvents = false
+            panel.orderFrontRegardless()
+        }
+        let t2 = CACurrentMediaTime()
         isShowing = true
         probe?.invalidate()
         if let view = panel.contentView {
@@ -145,10 +163,12 @@ final class WheelController {
             link.add(to: .main, forMode: .common)
             probe = link
         }
-        DispatchQueue.main.async {
-            self.model.isOpen = true
-            Feedback.shared.bloom()
-        }
+        // Flip the state in the same main-queue turn as orderFront. The view last rendered closed, so SwiftUI
+        // still animates the change, and the first frame the window server composites is already bloom frame one.
+        model.isOpen = true
+        bloomStarts.append((CACurrentMediaTime() - openStart) * 1000)
+        stageLog.append(String(format: "load=%.2f window=%.2f", (t1 - t0) * 1000, (t2 - t1) * 1000))
+        if !offscreenTest { Feedback.shared.bloom() }
         log.info("Ring opened: \(kind.rawValue) with \(items.count) item(s)")
     }
 
@@ -193,7 +213,7 @@ final class WheelController {
     func dragExited() { setHover(nil) }
 
     private func updateHover(dx: CGFloat, dy: CGFloat) {
-        var idx = WheelGeometry.slot(dx: dx, dy: dy, slots: model.slots)
+        var idx = WheelGeometry.slot(dx: dx, dy: dy, slots: model.slots, current: model.hoverIndex)
         if let i = idx, i >= model.options.count || !model.options[i].enabled { idx = nil }
         setHover(idx)
     }
@@ -201,7 +221,7 @@ final class WheelController {
     private func setHover(_ idx: Int?) {
         guard idx != model.hoverIndex else { return }
         model.hoverIndex = idx
-        if idx != nil { Feedback.shared.tick() }
+        if idx != nil, !offscreenTest { Feedback.shared.tick() }
     }
 
     func performDrop(_ info: NSDraggingInfo) -> Bool {

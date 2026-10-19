@@ -291,7 +291,8 @@ struct AddBackgroundPanel: View {
                 b.draw(in: ctx, rect: CGRect(x: 0, y: 0, width: 176, height: 88), grain: 0.5, matching: b == .match ? colours : [])
                 out[b] = ctx.makeImage()
             }
-            await MainActor.run { thumbs = out }
+            let done = out
+            await MainActor.run { thumbs = done }
         }
     }
 
@@ -332,7 +333,8 @@ struct AddBackgroundPanel: View {
         var st = style
         if mode == .screenshot { st.screenshot = true; st.liftSubject = false } else { st.screenshot = false }
         BGMemory.save(st, for: mode)
-        env.run("Adding background") { u, ctx in try ImageEdit.addBackground(u[0], style: st, ctx: ctx) }
+        let style = st
+        env.run("Adding background") { u, ctx in try ImageEdit.addBackground(u[0], style: style, ctx: ctx) }
     }
 
     /// Test hook: drive the panel from yuzuctl for screenshots.

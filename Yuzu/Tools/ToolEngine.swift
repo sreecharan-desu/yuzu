@@ -53,7 +53,10 @@ enum ToolEngine {
     static func hasAudio(_ url: URL) -> Bool {
         guard let probe = ToolLocator.ffprobe,
               let r = try? ToolLocator.run(probe, ["-v", "error", "-select_streams", "a", "-show_entries", "stream=index", "-of", "csv=p=0", url.path])
-        else { return !AVURLAsset(url: url).tracks(withMediaType: .audio).isEmpty }
+        else {
+            let asset = AVURLAsset(url: url)
+            return !((try? AsyncBridge.run { try await asset.loadTracks(withMediaType: .audio) }) ?? []).isEmpty
+        }
         return !r.stdout.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 

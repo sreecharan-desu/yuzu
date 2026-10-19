@@ -39,12 +39,13 @@ final class Filmstrip: ObservableObject {
                 let n = max(1, count)
                 for i in 0..<n {
                     let at = CMTime(seconds: dur * (Double(i) + 0.5) / Double(n), preferredTimescale: 600)
-                    if let cg = try? gen.copyCGImage(at: at, actualTime: nil) { imgs.append(cg) }
+                    if let cg = try? await gen.image(at: at).image { imgs.append(cg) }
                 }
             }
             let w = tracks.isEmpty ? await Self.waveform(asset, bins: 220) : []
+            let fsz = sz, fimgs = imgs
             await MainActor.run {
-                self.duration = dur; self.size = sz; self.frames = imgs; self.wave = w; self.failed = dur <= 0
+                self.duration = dur; self.size = fsz; self.frames = fimgs; self.wave = w; self.failed = dur <= 0
             }
         }
     }
@@ -140,8 +141,10 @@ final class ClipPlayer: ObservableObject {
         playing = true
         loop.map { player.removeTimeObserver($0) }
         loop = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: 0.1, preferredTimescale: 600), queue: .main) { [weak self] t in
-            guard let self, self.playing, t.seconds >= self.end else { return }
-            self.player.seek(to: CMTime(seconds: self.start, preferredTimescale: 600))
+            MainActor.assumeIsolated {
+                guard let self, self.playing, t.seconds >= self.end else { return }
+                self.player.seek(to: CMTime(seconds: self.start, preferredTimescale: 600))
+            }
         }
     }
 

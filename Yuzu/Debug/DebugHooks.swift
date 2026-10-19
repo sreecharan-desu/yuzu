@@ -105,14 +105,25 @@ final class DebugHooks {
             let wheel = WheelController.shared
             let f = NSScreen.main?.frame ?? .zero
             let items = DemoFiles.sampleImage().map { [$0] } ?? []
+            // offscreen=1 opens the ring past the right edge of every screen, silently, so nothing shows.
+            let off = info["offscreen"] == "1"
+            let maxX = NSScreen.screens.map(\.frame.maxX).max() ?? f.maxX
+            _ = maxX
+            let at = NSPoint(x: f.midX, y: f.midY)
+            wheel.offscreenTest = off
+            let bloomBase = wheel.bloomStarts.count
             var results: [Double] = []
             func step(_ i: Int) {
                 guard i < n else {
                     wheel.onLatency = nil
+                    wheel.offscreenTest = false
                     let sorted = results.sorted()
                     let line = results.map { String(format: "%.2f", $0) }.joined(separator: ",")
-                    let summary = String(format: "n=%d min=%.2f median=%.2f max=%.2f ms | %@", n, sorted.first ?? 0,
+                    let blooms = Array(wheel.bloomStarts.dropFirst(bloomBase)).sorted()
+                    var summary = String(format: "n=%d min=%.2f median=%.2f max=%.2f ms | %@", n, sorted.first ?? 0,
                                          sorted.isEmpty ? 0 : sorted[sorted.count / 2], sorted.last ?? 0, line)
+                    summary += "\n" + wheel.stageLog.suffix(n).joined(separator: "\n")
+                    summary += String(format: "\nbloom start: median=%.2f max=%.2f ms", blooms.isEmpty ? 0 : blooms[blooms.count / 2], blooms.last ?? 0)
                     try? summary.write(toFile: NSTemporaryDirectory() + "yuzu-latency.txt", atomically: true, encoding: .utf8)
                     return
                 }
@@ -123,7 +134,7 @@ final class DebugHooks {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { step(i + 1) }
                     }
                 }
-                wheel.handleTap(kind: .convert, items: items, at: NSPoint(x: f.midX, y: f.midY))
+                wheel.handleTap(kind: .convert, items: items, at: at)
             }
             step(0)
         case "toolpanel":
@@ -172,8 +183,9 @@ final class DebugHooks {
             if let b = info["backdrop"].flatMap(Backdrop.init(rawValue:)) { st.fill = .backdrop(b) }
             if let r = info["ratio"], let v = Double(r) { st.ratio = v }
             if info["border"] == "0" { st.border = false }
+            let style = st
             JobRunner.execute(label: "Adding background", units: [[src]], near: .zero, reveal: false, quiet: true,
-                              work: { u, ctx in try ImageEdit.addBackground(u[0], style: st, ctx: ctx) }) { r in
+                              work: { u, ctx in try ImageEdit.addBackground(u[0], style: style, ctx: ctx) }) { r in
                 let report = (r.outputs.map { "OK \($0.path) \(String(format: "%.2f", r.seconds))s" } + r.errors.map { "ERR \($0)" }).joined(separator: "\n")
                 try? report.write(toFile: NSTemporaryDirectory() + "yuzu-last-job.txt", atomically: true, encoding: .utf8)
             }
@@ -205,6 +217,56 @@ final class DebugHooks {
                 let report = (r.outputs.map { "OK \($0.path) \(String(format: "%.2f", r.seconds))s" } + r.errors.map { "ERR \($0)" }).joined(separator: "\n")
                 try? report.write(toFile: NSTemporaryDirectory() + "yuzu-last-job.txt", atomically: true, encoding: .utf8)
             }
+        case "imgbench":
+            // Times native image conversions (decode + encode) for a few sources and targets.
+            guard let dir = info["dir"] else { return }
+            let srcs = (info["files"] ?? "").split(separator: "|").map { URL(fileURLWithPath: String($0)) }
+            let targets: [ImageFormat] = [.jpeg, .png, .heic, .tiff, .webp]
+            let runs = Int(info["n"] ?? "") ?? 3
+            Task.detached(priority: .userInitiated) {
+                var lines: [String] = []
+                let settings = ImageSettings(quality: 0.85, compressQuality: 0.6, preserveMetadata: true)
+                for s in srcs {
+                    let work = URL(fileURLWithPath: dir).appendingPathComponent(s.lastPathComponent)
+                    try? FileManager.default.removeItem(at: work)
+                    try? FileManager.default.copyItem(at: s, to: work)
+                    for t in targets where ImageFormat.of(s) != t {
+                        var times: [Double] = []
+                        for _ in 0..<runs {
+                            let t0 = CFAbsoluteTimeGetCurrent()
+                            if let out = try? ImageEngine.convert(work, to: t, settings: settings) {
+                                times.append((CFAbsoluteTimeGetCurrent() - t0) * 1000)
+                                try? FileManager.default.removeItem(at: out)
+                            }
+                        }
+                        times.sort()
+                        lines.append(String(format: "%@\t%@\t%.0f", s.lastPathComponent, t.ext, times.isEmpty ? -1 : times[times.count / 2]))
+                    }
+                    try? FileManager.default.removeItem(at: work)
+                }
+                try? lines.joined(separator: "\n").write(toFile: NSTemporaryDirectory() + "yuzu-imgbench.txt", atomically: true, encoding: .utf8)
+            }
+        case "parbench":
+            // Converts the same set of images sequentially, then in parallel, and records both wall times.
+            guard let dir = info["dir"] else { return }
+            let base = URL(fileURLWithPath: dir)
+            let files = ((try? FileManager.default.contentsOfDirectory(at: base, includingPropertiesForKeys: nil)) ?? [])
+                .filter { ImageFormat.of($0) != nil }.sorted { $0.path < $1.path }
+            let fmt = ImageFormat(rawValue: info["fmt"] ?? "heic") ?? .heic
+            var lines: [String] = []
+            func pass(_ width: Int, then: @escaping () -> Void) {
+                let t0 = CFAbsoluteTimeGetCurrent()
+                JobRunner.execute(label: "bench", units: files.map { [$0] }, near: .zero, reveal: false, quiet: true, concurrency: width,
+                                  work: { u, ctx in try ImageEngine.convert(u[0], to: fmt, settings: ctx.settings) }) { r in
+                    lines.append(String(format: "concurrency=%d files=%d outputs=%d errors=%d wall=%.0fms", width, files.count,
+                                        r.outputs.count, r.errors.count, (CFAbsoluteTimeGetCurrent() - t0) * 1000))
+                    for o in r.outputs { try? FileManager.default.removeItem(at: o) }
+                    then()
+                }
+            }
+            pass(1) { pass(4) {
+                try? lines.joined(separator: "\n").write(toFile: NSTemporaryDirectory() + "yuzu-parbench.txt", atomically: true, encoding: .utf8)
+            } }
         case "bgbench":
             // Times the panel's preview render for a screenshot on each backdrop (same size the panel uses).
             guard let file = info["file"] else { return }
@@ -289,11 +351,9 @@ final class DebugHooks {
         func next() {
             guard !queue.isEmpty else {
                 try? (lines.joined(separator: "\n") + "\n").write(to: report, atomically: true, encoding: .utf8)
-                HUDController.shared.success("Batch finished", detail: "\(total) jobs")
                 return
             }
             let (f, o) = queue.removeFirst()
-            HUDController.shared.begin(title: "Batch \(total - queue.count)/\(total): \(f.lastPathComponent) → \(o.title)", near: NSPoint(x: 200, y: 200))
             JobRunner.run(o, urls: [f], near: .zero, reveal: false, quiet: true) { r in
                 let ok = !r.outputs.isEmpty && r.errors.isEmpty
                 let msg = r.errors.joined(separator: " | ").replacingOccurrences(of: "\t", with: " ").replacingOccurrences(of: "\n", with: " ")

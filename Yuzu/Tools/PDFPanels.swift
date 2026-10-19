@@ -18,7 +18,8 @@ final class PDFThumbs: ObservableObject {
                 if let cg = img.cgImage(forProposedRect: nil, context: nil, hints: nil) { out.append(cg) }
             }
             let n = doc.pageCount
-            await MainActor.run { self.pages = out; self.count = n }
+            let done = out
+            await MainActor.run { self.pages = done; self.count = n }
         }
     }
 }

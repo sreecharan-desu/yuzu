@@ -73,15 +73,26 @@ struct PetalShape: Shape {
 
 enum WheelGeometry {
     static func step(_ slots: Int) -> Double { 2 * .pi / Double(slots) }
+    /// About 4 degrees of stickiness at petal edges.
+    static let hysteresis = 0.07
     /// Center angle of a slot; slot 0 points straight up.
     static func midAngle(_ i: Int, _ slots: Int) -> Double { -.pi / 2 + Double(i) * step(slots) }
 
     /// Slot under a point given relative to the wheel center in y-down coordinates.
-    static func slot(dx: CGFloat, dy: CGFloat, slots: Int) -> Int? {
+    /// With `current`, the highlighted petal is kept until the pointer is a few degrees past its edge, so
+    /// hovering along a seam never flickers between two petals.
+    static func slot(dx: CGFloat, dy: CGFloat, slots: Int, current: Int? = nil) -> Int? {
         let r = hypot(dx, dy)
-        guard r > Theme.hubDiameter / 2 + 2, r < Theme.canvas / 2 + 40 else { return nil }
+        let inner = Theme.hubDiameter / 2 + (current == nil ? 2 : -4)
+        let outer = Theme.canvas / 2 + (current == nil ? 40 : 56)
+        guard r > inner, r < outer else { return nil }
         var a = atan2(Double(dy), Double(dx)) + .pi / 2
         while a < 0 { a += 2 * .pi }
+        if let c = current, c < slots {
+            var d = abs(a - Double(c) * step(slots)).truncatingRemainder(dividingBy: 2 * .pi)
+            if d > .pi { d = 2 * .pi - d }
+            if d < step(slots) / 2 + hysteresis { return c }
+        }
         let s = Int((a / step(slots)).rounded()) % slots
         return s
     }

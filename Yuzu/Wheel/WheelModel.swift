@@ -39,7 +39,7 @@ final class WheelModel: ObservableObject {
         thumbnail = nil
         sizeText = ""
         guard let first = items.first else { return }
-        thumbnail = NSWorkspace.shared.icon(forFile: first.path)
+        thumbnail = ThumbnailCache.shared.cached(first, side: 96) ?? NSWorkspace.shared.icon(forFile: first.path)
         var total: Int64 = 0
         for u in items {
             if let s = try? u.resourceValues(forKeys: [.totalFileSizeKey, .fileSizeKey]) {
@@ -49,17 +49,10 @@ final class WheelModel: ObservableObject {
         let size = ByteCountFormatter.string(fromByteCount: total, countStyle: .file)
         sizeText = items.count > 1 ? "\(items.count) files · \(size)" : size
 
-        let req = QLThumbnailGenerator.Request(fileAt: first, size: CGSize(width: 96, height: 96),
-                                               scale: NSScreen.main?.backingScaleFactor ?? 2,
-                                               representationTypes: .thumbnail)
         let expected = first
-        QLThumbnailGenerator.shared.generateBestRepresentation(for: req) { [weak self] rep, _ in
-            guard let img = rep?.nsImage else { return }
-            DispatchQueue.main.async {
-                MainActor.assumeIsolated {
-                    if self?.items.first == expected { self?.thumbnail = img }
-                }
-            }
+        // Cached thumbnails land synchronously, so a repeat tap on the same file opens with its preview.
+        ThumbnailCache.shared.thumbnail(for: first, side: 96) { [weak self] img in
+            if self?.items.first == expected { self?.thumbnail = img }
         }
     }
 }
