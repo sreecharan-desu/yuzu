@@ -73,6 +73,7 @@ final class ToolPanelController: NSObject, NSWindowDelegate {
     static func size(for tool: FileTool) -> NSSize {
         switch tool {
         case .metadata: return NSSize(width: 760, height: 560)
+        case .addBackground: return NSSize(width: 980, height: 730)
         case .trim, .speed, .split, .bleep, .channels: return NSSize(width: 860, height: 560)
         case .organize: return NSSize(width: 900, height: 620)
         default: return NSSize(width: 940, height: 640)

@@ -153,10 +153,53 @@ final class DebugHooks {
             }
             if let r = info["ratio"], let v = Double(r) { st.ratio = v }
             let src = URL(fileURLWithPath: file)
+            if info["screenshot"] == "1" {
+                let img = try? ImageEdit.full(src)
+                let t = img.map { ImageEdit.trimCaptureShadow($0) }
+                st = BGStyle.forScreenshot(pixelScale: ImageEdit.pixelScale(src), width: Double(t?.image.width ?? 1), captureCorner: t?.corner)
+            }
+            if let b = info["backdrop"].flatMap(Backdrop.init(rawValue:)) { st.fill = .backdrop(b) }
+            if let r = info["ratio"], let v = Double(r) { st.ratio = v }
+            if info["border"] == "0" { st.border = false }
             JobRunner.execute(label: "Adding background", units: [[src]], near: .zero, reveal: false, quiet: true,
                               work: { u, ctx in try ImageEdit.addBackground(u[0], style: st, ctx: ctx) }) { r in
                 let report = (r.outputs.map { "OK \($0.path) \(String(format: "%.2f", r.seconds))s" } + r.errors.map { "ERR \($0)" }).joined(separator: "\n")
                 try? report.write(toFile: NSTemporaryDirectory() + "yuzu-last-job.txt", atomically: true, encoding: .utf8)
+            }
+        case "bgbench":
+            // Times the panel's preview render for a screenshot on each backdrop (same size the panel uses).
+            guard let file = info["file"] else { return }
+            let src = URL(fileURLWithPath: file)
+            let n = Int(info["n"] ?? "") ?? 15
+            Task.detached(priority: .userInitiated) {
+                guard let prev = try? ImageEngine.decode(src, maxPixel: 1320).image else { return }
+                let t = ImageEdit.trimCaptureShadow(prev)
+                let full = try? ImageEngine.decode(src, maxPixel: 1).properties
+                let fw = Double(full?[kCGImagePropertyPixelWidth] as? Int ?? t.image.width)
+                var lines: [String] = ["preview \(t.image.width)x\(t.image.height) corner=\(t.corner.map { String(format: "%.4f", $0) } ?? "none")"]
+                let base = BGStyle.forScreenshot(pixelScale: ImageEdit.pixelScale(src), width: fw, captureCorner: t.corner)
+                var variants: [(String, BGStyle)] = []
+                if info["parts"] == "1" {
+                    var v = base; v.fill = .none; v.shadow = 0; v.border = false; variants.append(("bare", v))
+                    v.fill = .solid(.white); variants.append(("+solid", v))
+                    v.fill = .backdrop(.aurora); v.grain = 0; variants.append(("+backdrop", v))
+                    v.grain = 0.5; variants.append(("+grain", v))
+                    v.border = true; variants.append(("+border", v))
+                    v.shadow = base.shadow; variants.append(("+shadow", v))
+                } else {
+                    variants = Backdrop.allCases.map { b in var v = base; v.fill = .backdrop(b); return (b.rawValue, v) }
+                }
+                for (name, st) in variants {
+                    var times: [Double] = []
+                    for _ in 0..<n {
+                        let t0 = CFAbsoluteTimeGetCurrent()
+                        _ = ImageEdit.renderBackground(image: t.image, subject: nil, style: st)
+                        times.append((CFAbsoluteTimeGetCurrent() - t0) * 1000)
+                    }
+                    times.sort()
+                    lines.append(String(format: "%@\tfirst %.1f ms\tmedian %.1f ms\tmax %.1f ms", name, times.first ?? 0, times[times.count / 2], times.last ?? 0))
+                }
+                try? lines.joined(separator: "\n").write(toFile: NSTemporaryDirectory() + "yuzu-bench.txt", atomically: true, encoding: .utf8)
             }
         case "toast":
             let hud = HUDController.shared
