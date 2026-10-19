@@ -123,7 +123,7 @@ struct MetadataPanel: View {
                     TextField("Search \(tags.count) tags", text: $search).textFieldStyle(.plain)
                 }
                 .padding(8)
-                .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.06)))
+                .background(RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous).fill(Color.primary.opacity(0.06)))
                 .padding(10)
                 if loading {
                     ProgressView().controlSize(.small).frame(maxHeight: .infinity)

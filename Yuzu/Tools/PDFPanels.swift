@@ -39,12 +39,12 @@ private struct PageTile: View {
                         .rotationEffect(.degrees(Double(rotation)))
                         .scaleEffect(rotation % 180 == 0 ? 1 : 0.76)   // a turned page still fits its tile
                         .shadow(color: .black.opacity(0.22), radius: 3, y: 1)
-                } else { RoundedRectangle(cornerRadius: 4).fill(Color.primary.opacity(0.07)) }
+                } else { RoundedRectangle(cornerRadius: 4).fill(Theme.step200) }
             }
             .frame(height: 118)
             .padding(6)
-            .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(tint?.opacity(0.18) ?? Color.clear))
-            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(Theme.accentDeep, lineWidth: selected ? 2.5 : 0))
+            .background(RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous).fill(tint?.opacity(0.18) ?? Color.clear))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous).strokeBorder(Theme.accentDeep, lineWidth: selected ? 2.5 : 0))
             Text(label).font(.system(size: 10.5, weight: .medium).monospacedDigit())
                 .foregroundStyle(tint ?? .secondary)
         }
@@ -62,7 +62,8 @@ struct SplitPDFPanel: View {
     @State private var cutsAfter: Set<Int> = []
 
     enum Mode: Hashable { case every, pick, ranges }
-    static let tints: [Color] = [.orange, .blue, .green, .pink, .purple, .teal, .yellow, .red]
+    /// Group markers: ink steps, not a rainbow.
+    static let tints: [Color] = [Theme.ink, Theme.inkSoft, Theme.step300, Theme.inkMute]
 
     var body: some View {
         ToolScaffold(env: env, primary: "Split into \(groups.count) PDF\(groups.count == 1 ? "" : "s")", primaryEnabled: groups.count > 1, onPrimary: save) {

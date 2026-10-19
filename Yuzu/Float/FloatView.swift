@@ -36,7 +36,7 @@ private struct FloatCard<G: Gesture>: View {
     @ObservedObject var model: FloatModel
     let controller: FloatController
     let drag: G
-    private let columns = [GridItem(.fixed(112), spacing: 8), GridItem(.fixed(112), spacing: 8)]
+    private let columns = [GridItem(.fixed(112), spacing: Theme.Space.s), GridItem(.fixed(112), spacing: Theme.Space.s)]
 
     var body: some View {
         VStack(spacing: 0) {
@@ -45,39 +45,39 @@ private struct FloatCard<G: Gesture>: View {
                 empty
             } else {
                 ScrollView(.vertical, showsIndicators: false) {
-                    LazyVGrid(columns: columns, spacing: 8) {
+                    LazyVGrid(columns: columns, spacing: Theme.Space.s) {
                         ForEach(model.items, id: \.self) { url in
                             FloatTile(url: url, controller: controller)
                                 .transition(.scale(scale: 0.8).combined(with: .opacity))
                         }
                     }
-                    .padding(.horizontal, 10).padding(.bottom, 10)
+                    .padding(.horizontal, Theme.Space.m - 4).padding(.bottom, Theme.Space.m - 4)
                 }
             }
         }
         .frame(width: FloatGeometry.width)
         .frame(maxHeight: .infinity, alignment: .top)
-        .background(shape.fill(Color(nsColor: .windowBackgroundColor).opacity(0.28)))
         .glassEffect(.regular, in: shape)
-        .overlay(shape.strokeBorder(model.dropTargeted ? Theme.accentDeep : Color.white.opacity(0.16),
-                                    lineWidth: model.dropTargeted ? 2 : 1))
-        .animation(.easeOut(duration: 0.15), value: model.dropTargeted)
+        .overlay(shape.strokeBorder(model.dropTargeted ? Theme.ink.opacity(0.5) : Theme.line, lineWidth: 1))
+        .overlay(alignment: .top) {
+            // drop target: a single whisper-of-yuzu hairline along the top edge
+            Capsule().fill(Theme.yuzu).frame(width: 40, height: 3).padding(.top, 4)
+                .opacity(model.dropTargeted ? 1 : 0)
+        }
+        .shadow(Theme.Shadows.float)
+        .animation(Theme.Motion.chrome, value: model.dropTargeted)
     }
 
-    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: 20, style: .continuous) }
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: Theme.Radius.panel, style: .continuous) }
 
     private var header: some View {
-        HStack(spacing: 7) {
-            Image(systemName: "paperclip")
-                .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(Theme.ink)
-                .frame(width: 22, height: 22)
-                .background(Circle().fill(Theme.accent))
-            Text("Float").font(.system(size: 13, weight: .semibold, design: .rounded))
+        HStack(spacing: Theme.Space.s) {
+            Text("Float").type(.headline).foregroundStyle(Theme.ink)
             if !model.items.isEmpty {
                 Text("\(model.items.count)")
-                    .font(.system(size: 11, weight: .semibold, design: .rounded)).monospacedDigit()
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12, weight: .regular)).monospacedDigit()
+                    .foregroundStyle(Theme.inkMute)
+                    .contentTransition(.numericText())
             }
             Spacer(minLength: 0)
             Button { controller.dockNearest() } label: {
@@ -87,35 +87,22 @@ private struct FloatCard<G: Gesture>: View {
             Button { controller.clear() } label: { Image(systemName: "xmark") }
                 .help("Clear and close")
         }
-        .buttonStyle(FloatIconButton())
-        .padding(.horizontal, 12)
-        .frame(height: 46)
+        .buttonStyle(QuietIconButtonStyle(size: 24))
+        .padding(.leading, Theme.Space.m).padding(.trailing, Theme.Space.m - 4)
+        .frame(height: 48)
         .contentShape(Rectangle())
         .gesture(drag)
     }
 
     private var empty: some View {
-        VStack(spacing: 6) {
-            Image(systemName: "tray.and.arrow.down").font(.system(size: 22, weight: .regular))
-            Text("Drop files here").font(.system(size: 12, weight: .medium))
-            Text("Drag them out to any app or folder").font(.system(size: 10.5)).foregroundStyle(.secondary)
+        VStack(spacing: Theme.Space.half) {
+            EmphasisText("Hold files ", "here", ".").type(.headline).foregroundStyle(Theme.ink)
+            Text("Drag them out to any app or folder.").type(.caption).foregroundStyle(Theme.inkSoft)
         }
-        .foregroundStyle(.secondary)
         .frame(maxWidth: .infinity, minHeight: 96)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous)
-            .strokeBorder(style: StrokeStyle(lineWidth: 1.2, dash: [5, 4])).foregroundStyle(.secondary.opacity(0.5)))
-        .padding(.horizontal, 10).padding(.bottom, 10)
-    }
-}
-
-private struct FloatIconButton: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(.secondary)
-            .frame(width: 24, height: 24)
-            .background(Circle().fill(Color.primary.opacity(configuration.isPressed ? 0.16 : 0.07)))
-            .contentShape(Circle())
+        .background(RoundedRectangle(cornerRadius: Theme.Radius.card - 4, style: .continuous).fill(Theme.ink.opacity(0.04)))
+        .padding(.horizontal, Theme.Space.m - 4).padding(.bottom, Theme.Space.m - 4)
+        .materialize(0, rise: 8, blur: 8)
     }
 }
 
@@ -127,24 +114,26 @@ struct FloatTile: View {
     @State private var hovering = false
 
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: Theme.Space.half + 2) {
             ZStack(alignment: .topTrailing) {
                 Group {
                     if let thumb {
                         Image(nsImage: thumb).resizable().aspectRatio(contentMode: .fit)
                     } else {
                         Image(nsImage: NSWorkspace.shared.icon(forFile: url.path)).resizable().aspectRatio(contentMode: .fit)
-                            .padding(10)
+                            .padding(Theme.Space.s)
                     }
                 }
-                .frame(width: 104, height: 70)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .shadow(color: .black.opacity(0.18), radius: 3, y: 1)
+                .frame(width: 96, height: 64)
+                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.control - 4, style: .continuous))
+                .shadow(Theme.Shadows.soft)
                 if hovering {
                     Button { controller.remove(url) } label: {
-                        Image(systemName: "xmark").font(.system(size: 8, weight: .bold))
+                        Image(systemName: "xmark").font(.system(size: 8, weight: .semibold))
+                            .foregroundStyle(Theme.inkSoft)
                             .frame(width: 16, height: 16)
-                            .background(Circle().fill(.regularMaterial))
+                            .background(Circle().fill(Theme.surface))
+                            .overlay(Circle().strokeBorder(Theme.line, lineWidth: 1))
                     }
                     .buttonStyle(.plain)
                     .offset(x: 4, y: -4)
@@ -152,16 +141,18 @@ struct FloatTile: View {
                 }
             }
             Text(url.lastPathComponent)
-                .font(.system(size: 10.5, weight: .medium))
+                .type(.micro).fontWeight(.regular)
+                .foregroundStyle(Theme.inkSoft)
                 .lineLimit(1).truncationMode(.middle)
-                .frame(maxWidth: 108)
+                .frame(maxWidth: 96)
         }
-        .padding(.vertical, 5)
-        .frame(width: 112, height: 98)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .fill(Color.primary.opacity(hovering ? 0.09 : 0.04)))
-        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .frame(width: 112, height: 104)
+        .background(RoundedRectangle(cornerRadius: Theme.Radius.control + 4, style: .continuous)
+            .fill(Theme.ink.opacity(hovering ? 0.07 : 0.035)))
+        .scaleEffect(hovering ? 1.01 : 1)
+        .contentShape(RoundedRectangle(cornerRadius: Theme.Radius.control + 4, style: .continuous))
         .onHover { hovering = $0 }
+        .animation(Theme.Motion.house(0.6), value: hovering)
         .onTapGesture(count: 2) { controller.open(url) }
         .onDrag { NSItemProvider(object: url as NSURL) }
         .contextMenu {
@@ -186,35 +177,34 @@ struct FloatTab: View {
 
     var body: some View {
         let shape = UnevenRoundedRectangle(
-            topLeadingRadius: edge == .left ? 6 : 18, bottomLeadingRadius: edge == .left ? 6 : 18,
-            bottomTrailingRadius: edge == .left ? 18 : 6, topTrailingRadius: edge == .left ? 18 : 6, style: .continuous)
+            topLeadingRadius: edge == .left ? 8 : Theme.Radius.card, bottomLeadingRadius: edge == .left ? 8 : Theme.Radius.card,
+            bottomTrailingRadius: edge == .left ? Theme.Radius.card : 8, topTrailingRadius: edge == .left ? Theme.Radius.card : 8, style: .continuous)
         ZStack {
             if thumbs.isEmpty {
-                Image(systemName: "paperclip").font(.system(size: 20, weight: .semibold)).foregroundStyle(.secondary)
+                Image(systemName: "tray").font(.system(size: 16, weight: .regular)).foregroundStyle(Theme.inkSoft)
             } else {
                 ForEach(Array(thumbs.prefix(3).enumerated().reversed()), id: \.offset) { i, img in
                     Image(nsImage: img).resizable().aspectRatio(contentMode: .fill)
                         .frame(width: 38, height: 38)
-                        .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(.white.opacity(0.7), lineWidth: 1))
-                        .shadow(color: .black.opacity(0.22), radius: 2, y: 1)
-                        .rotationEffect(.degrees(Double(i) * (edge == .left ? 7 : -7)))
-                        .offset(x: CGFloat(i) * 3, y: CGFloat(i) * -5)
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Color.white.opacity(0.8), lineWidth: 1))
+                        .shadow(Theme.Shadows.soft)
+                        .offset(y: CGFloat(i) * -6)
+                        .scaleEffect(1 - CGFloat(i) * 0.06)
                 }
             }
             if !model.items.isEmpty {
                 Text("\(model.items.count)")
-                    .font(.system(size: 11, weight: .bold, design: .rounded)).monospacedDigit()
-                    .foregroundStyle(Theme.ink)
+                    .font(.system(size: 11, weight: .medium)).monospacedDigit()
+                    .foregroundStyle(Theme.onInk)
                     .padding(.horizontal, 6).frame(minWidth: 20, minHeight: 20)
-                    .background(Capsule().fill(Theme.accent))
-                    .offset(x: 14, y: 30)
+                    .background(Capsule().fill(Theme.ink))
+                    .offset(y: 40)
             }
         }
         .frame(width: FloatGeometry.tab.width, height: FloatGeometry.tab.height)
-        .background(shape.fill(Color(nsColor: .windowBackgroundColor).opacity(0.28)))
         .glassEffect(.regular, in: shape)
-        .overlay(shape.strokeBorder(model.dropTargeted ? Theme.accentDeep : Color.white.opacity(0.18), lineWidth: model.dropTargeted ? 2 : 1))
+        .overlay(shape.strokeBorder(model.dropTargeted ? Theme.ink.opacity(0.5) : Theme.line, lineWidth: 1))
         .contentShape(shape)
         .onAppear(perform: load)
         .onChange(of: model.items) { _, _ in load() }
@@ -232,13 +222,14 @@ struct FloatTab: View {
 
 /// Screenshot staging: a desktop-like backdrop with the tab parked left and the open shelf docked right.
 struct FloatStage: View {
+    @Environment(\.colorScheme) private var scheme
     @ObservedObject var model: FloatModel
     @ObservedObject var tabModel: FloatModel
     let controller: FloatController
 
     var body: some View {
         ZStack {
-            if let bg = Backdrop.smallImage(.aurora, aspect: 760.0 / 470.0, matching: []) {
+            if let bg = Backdrop.smallImage(scheme == .dark ? .graphite : .pearl, aspect: 760.0 / 470.0, matching: []) {
                 Image(decorative: bg, scale: 1).resizable().aspectRatio(contentMode: .fill)
             }
             HStack(alignment: .center, spacing: 0) {

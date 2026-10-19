@@ -11,7 +11,7 @@ struct SettingsView: View {
             AboutPane().tabItem { Label("About", systemImage: "info.circle") }.tag("about")
         }
         .frame(width: 540, height: 400)
-        .tint(Theme.accentDeep)
+        .tint(Theme.ink)
     }
 }
 
@@ -127,19 +127,21 @@ struct ShortcutRecorder: View {
     var body: some View {
         VStack(alignment: .trailing, spacing: 3) {
             Button(action: toggle) {
-                HStack(spacing: 6) {
+                HStack(spacing: Theme.Space.s) {
                     if isRecording {
-                        Circle().fill(Theme.accentDeep).frame(width: 7, height: 7)
+                        Circle().fill(Theme.yuzu).frame(width: 8, height: 8)
                         Text(state.live.isEmpty ? "Press keys…" : ModifierCombo(state.live).label)
                     } else {
-                        Text(current.symbol).font(.system(size: 13, weight: .semibold, design: .rounded))
+                        Text(current.symbol).font(.system(size: 13, weight: .medium))
                         Text(current.names)
                     }
                 }
                 .font(.system(size: 12, weight: .medium))
-                .padding(.horizontal, 12).frame(minWidth: 150, minHeight: 26)
-                .background(Capsule().fill(isRecording ? Theme.accent.opacity(0.22) : Color.primary.opacity(0.06)))
-                .overlay(Capsule().strokeBorder(isRecording ? Theme.accentDeep : Color.primary.opacity(0.12), lineWidth: isRecording ? 1.5 : 1))
+                .foregroundStyle(Theme.ink)
+                .padding(.horizontal, Theme.Space.m - 4).frame(minWidth: 152, minHeight: 28)
+                .background(Capsule().fill(isRecording ? Theme.surface : Theme.step200))
+                .overlay(Capsule().strokeBorder(isRecording ? Theme.ink : Theme.line, lineWidth: isRecording ? 1.5 : 1))
+                .animation(Theme.Motion.chrome, value: isRecording)
                 .contentShape(Capsule())
             }
             .buttonStyle(.plain)
@@ -214,27 +216,36 @@ private struct ConversionPane: View {
 
 private struct AboutPane: View {
     var body: some View {
-        VStack(spacing: 14) {
-            Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 84, height: 84)
-            Text("Yuzu").font(.system(size: 22, weight: .bold, design: .rounded))
-            Text("Version \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")")
-                .foregroundStyle(.secondary)
-            Text("Convert, edit and act on files right at your pointer. Everything runs on this Mac.")
-                .multilineTextAlignment(.center).foregroundStyle(.secondary).frame(maxWidth: 360)
-            Divider().frame(width: 360)
-            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 6) {
+        VStack(spacing: Theme.Space.m) {
+            Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 72, height: 72)
+                .shadow(Theme.Shadows.card)
+                .materialize(0)
+            VStack(spacing: Theme.Space.half) {
+                Text("Yuzu").type(.title).foregroundStyle(Theme.ink)
+                Text("Version \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")")
+                    .type(.caption).foregroundStyle(Theme.inkMute)
+            }
+            .materialize(1)
+            EmphasisText("Convert, edit and act on files, right ", "at", " your pointer.")
+                .type(.body).multilineTextAlignment(.center).foregroundStyle(Theme.inkSoft).frame(maxWidth: 360)
+                .materialize(2)
+            Grid(alignment: .leading, horizontalSpacing: Theme.Space.m - 4, verticalSpacing: Theme.Space.s) {
                 ForEach(ToolLocator.all) { t in
                     GridRow {
-                        Image(systemName: t.path == nil ? "xmark.circle" : "checkmark.circle.fill")
-                            .foregroundStyle(t.path == nil ? Color.secondary : Theme.accentDeep)
-                        Text(t.id).fontWeight(.medium)
-                        Text(t.path == nil ? "not found" : t.use).foregroundStyle(.secondary)
+                        Image(systemName: t.path == nil ? "circle.dashed" : "checkmark.circle.fill")
+                            .font(.system(size: 12, weight: .regular))
+                            .foregroundStyle(t.path == nil ? Theme.inkMute : Theme.ink)
+                        Text(t.id).type(.callout).fontWeight(.medium).foregroundStyle(Theme.ink)
+                        Text(t.path == nil ? "Not installed" : t.use).type(.callout).foregroundStyle(Theme.inkSoft)
                     }
                 }
             }
-            .font(.callout)
+            .padding(Theme.Space.m)
+            .card()
+            .materialize(3)
+            TrustLine(lead: "Private by design.", rest: "Every file stays on this Mac.").materialize(4)
         }
-        .padding(24)
+        .padding(Theme.Space.l)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

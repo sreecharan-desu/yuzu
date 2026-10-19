@@ -59,7 +59,7 @@ struct BGStyle: Equatable, Codable, Sendable {
         var s = BGStyle()
         s.liftSubject = false
         s.screenshot = true
-        s.fill = .backdrop(.aurora)
+        s.fill = .backdrop(.pearl)
         s.padding = 0.08
         s.corners = captureCorner ?? (ImageEdit.windowCornerPoints * pixelScale / max(width, 1))
         s.shadow = 0.05

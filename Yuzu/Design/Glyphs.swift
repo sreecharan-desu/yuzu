@@ -1,42 +1,29 @@
 import AppKit
 
 enum Glyphs {
-    /// Template menu bar glyph matching the v2 icon: a round yuzu with a leaf and an orbit arc.
+    /// Template menu bar glyph matching the Ring mark: seven petals and a hub, the eighth petal lifted out.
     static func menuBarIcon() -> NSImage {
-        let image = NSImage(size: NSSize(width: 18, height: 18), flipped: false) { _ in
-            guard let ctx = NSGraphicsContext.current?.cgContext else { return false }
+        let image = NSImage(size: NSSize(width: 18, height: 18), flipped: true) { rect in
+            let c = CGPoint(x: rect.midX, y: rect.midY)
+            let ro: CGFloat = 7.6, ri: CGFloat = 4.0, gap: CGFloat = 1.6, n = 8
+            let step = 2 * Double.pi / Double(n)
             NSColor.black.setFill()
-            NSColor.black.setStroke()
-            // fruit
-            let fruit = NSBezierPath(ovalIn: NSRect(x: 2.4, y: 1.6, width: 12.0, height: 12.0))
-            fruit.fill()
-            // leaf, separated from the fruit by a hairline gap
-            let leaf = NSBezierPath()
-            leaf.move(to: NSPoint(x: 9.2, y: 12.4))
-            leaf.curve(to: NSPoint(x: 16.2, y: 15.6), controlPoint1: NSPoint(x: 10.4, y: 16.2), controlPoint2: NSPoint(x: 14.0, y: 16.8))
-            leaf.curve(to: NSPoint(x: 9.2, y: 12.4), controlPoint1: NSPoint(x: 15.2, y: 12.6), controlPoint2: NSPoint(x: 11.6, y: 11.6))
-            ctx.saveGState()
-            ctx.setBlendMode(.clear)
-            leaf.lineWidth = 2.2
-            leaf.stroke()
-            ctx.restoreGState()
-            leaf.fill()
-            // orbit arc: cut a channel through the fruit, then draw the thin arc inside it
-            let orbit = NSBezierPath()
-            orbit.appendArc(withCenter: .zero, radius: 8.6, startAngle: 192, endAngle: 344)
-            var t = AffineTransform(translationByX: 8.4, byY: 8.0)
-            t.rotate(byDegrees: 14)
-            t.scale(x: 1, y: 0.34)
-            orbit.transform(using: t)
-            ctx.saveGState()
-            ctx.setBlendMode(.clear)
-            orbit.lineWidth = 3.0
-            orbit.lineCapStyle = .round
-            orbit.stroke()
-            ctx.restoreGState()
-            orbit.lineWidth = 1.3
-            orbit.lineCapStyle = .round
-            orbit.stroke()
+            for i in 0..<n {
+                let a0 = -Double.pi / 2 + Double(i) * step, a1 = a0 + step
+                var center = c
+                var outer = ro
+                if i == 0 {   // the chosen petal, nudged outward
+                    let mid = (a0 + a1) / 2
+                    center = CGPoint(x: c.x + 1.3 * CGFloat(cos(mid)), y: c.y + 1.3 * CGFloat(sin(mid)))
+                    outer = ro + 0.4
+                }
+                let shape = PetalShape(startAngle: a0, endAngle: a1, innerRadius: ri, outerRadius: outer, gap: gap, corner: 0.9)
+                let side = outer * 2 + 2
+                let p = shape.path(in: CGRect(x: center.x - side / 2, y: center.y - side / 2, width: side, height: side))
+                let bp = NSBezierPath(cgPath: p.cgPath)
+                bp.fill()
+            }
+            NSBezierPath(ovalIn: NSRect(x: c.x - 1.9, y: c.y - 1.9, width: 3.8, height: 3.8)).fill()
             return true
         }
         image.isTemplate = true

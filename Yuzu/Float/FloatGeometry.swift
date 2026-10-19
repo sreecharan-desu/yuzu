@@ -4,14 +4,14 @@ import AppKit
 enum FloatEdge: String, Sendable { case left, right }
 
 enum FloatGeometry {
-    static let width: CGFloat = 252
+    static let width: CGFloat = 256
     static let tab = NSSize(width: 64, height: 124)
     static let snapDistance: CGFloat = 28
     static let margin: CGFloat = 8
 
     static func expandedHeight(items: Int) -> CGFloat {
         let rows = max(1, min(3, Int(ceil(Double(items) / 2))))
-        return 46 + CGFloat(rows) * 106 + 10
+        return 48 + CGFloat(rows) * 112 + 4
     }
 
     /// After a drag ends: dock to an edge when the shelf is within `snapDistance` of it (or pushed past it),

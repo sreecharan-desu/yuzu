@@ -1,29 +1,27 @@
 <p align="center">
-  <img src="docs/icon.png" width="128" height="128" alt="Yuzu icon">
+  <img src="docs/icon.png" width="112" height="112" alt="Yuzu icon">
 </p>
 
 <h1 align="center">Yuzu</h1>
 
 <p align="center">
-  <b>Convert, edit and act on files right at your pointer.</b><br>
-  Start dragging a file, tap a key, drop it on a ring of options. That's it.
+  Convert, edit and act on files, <i>right</i> at your pointer.<br>
+  Drag a file, tap a key, release on what you want.
 </p>
 
 <p align="center">
-  <a href="https://github.com/sreecharan-desu/yuzu/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/sreecharan-desu/yuzu?label=download&color=f59e0b"></a>
+  <a href="https://github.com/sreecharan-desu/yuzu/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/sreecharan-desu/yuzu?label=download&color=1d1d1f"></a>
   <a href="https://github.com/sreecharan-desu/yuzu/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/sreecharan-desu/yuzu/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="macOS 26+" src="https://img.shields.io/badge/macOS-26%2B-black">
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-blue"></a>
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/ring-convert-dark.png" width="30%" alt="Convert ring">
-  <img src="docs/screenshots/ring-tools-light.png" width="30%" alt="Tools ring">
-  <img src="docs/screenshots/ring-actions-dark.png" width="30%" alt="Actions ring">
+  <img src="docs/hero.png" width="100%" alt="The Convert ring open under the pointer on a quiet desktop, with a saved confirmation below">
 </p>
 
 Yuzu is a small, native menu bar app for macOS. While you drag any file, tap a modifier key and a
-glass ring opens under the pointer with what you can do with that file. Drop on an option and the
+ring opens under the pointer with what you can do with that file. Drop on an option and the
 result is saved next to the original. Nothing is uploaded anywhere.
 
 ## Features
@@ -37,7 +35,7 @@ result is saved next to the original. Nothing is uploaded anywhere.
   - Documents, slides and sheets: DOCX, DOC, RTF, ODT, EPUB, HTML, Markdown, TXT, PDF, PPTX, ODP, XLSX, ODS, CSV, TSV
   - Subtitles (SRT and VTT) and archives (ZIP, TAR, TGZ, extract)
 - **26 tools.** Compress, resize, half size, rotate, flip, crop, edit photo, annotate, redact, add
-  background (including a screenshot mode with 20 original backdrops and social ratios), metadata
+  background (including a screenshot mode with eight quiet backdrops and social ratios), metadata
   viewer and editor, read QR codes, make PDF, merge, split and organize PDF pages, trim, speed,
   split, mute, join, bleep, normalize, channels, crop video, and compress video, audio and PDF.
 - **Actions.** AirDrop, Float, Copy, Copy Path, Move, Open in Terminal.
@@ -48,8 +46,12 @@ result is saved next to the original. Nothing is uploaded anywhere.
 - **Light.** About 0.1% CPU and 75 MB of memory when idle.
 
 <p align="center">
+  <img src="docs/screenshots/ring-tools-light.png" width="49%" alt="Tools ring in light mode">
+  <img src="docs/screenshots/ring-actions-dark.png" width="49%" alt="Actions ring in dark mode">
+</p>
+<p align="center">
+  <img src="docs/screenshots/add-background.png" width="49%" alt="Add Background framing a screenshot on the Pearl backdrop">
   <img src="docs/screenshots/float.png" width="49%" alt="Float shelf docked to the right edge, with the parked tab on the left">
-  <img src="docs/screenshots/split-pdf.png" width="49%" alt="Split PDF tool">
 </p>
 
 ## Install
@@ -68,7 +70,6 @@ You can check the download against the `Yuzu.dmg.sha256` file on the release pag
 shasum -a 256 ~/Downloads/Yuzu.dmg
 ```
 
-<p align="center"><img src="docs/screenshots/dmg-window.png" width="520" alt="Yuzu disk image window"></p>
 
 ### Optional helpers
 
@@ -95,7 +96,7 @@ The welcome window and **Settings > About** show which helpers Yuzu found.
 - Results are saved next to the original with a new name. Originals are never changed.
 - Change the keys in **Settings > Shortcuts**: click a shortcut, press the modifier keys you want, release.
 
-<p align="center"><img src="docs/screenshots/onboarding.png" width="560" alt="Welcome window"></p>
+<p align="center"><img src="docs/screenshots/onboarding.png" width="80%" alt="Welcome window"></p>
 
 ### Permissions
 

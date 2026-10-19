@@ -6,6 +6,18 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+### Changed
+- New identity: the Ring mark, in ink and pearl, with a matching menu bar glyph.
+- A design system for every surface: ink on white (inverted in dark mode), three neutral steps,
+  hairline borders, an 8 pt grid, three radii plus pills, one type scale, shadow and motion tokens.
+- The ring, toasts, tool panels, Add Background, Float, the welcome window and Settings now use it.
+  Yuzu yellow appears only as a small hover or selection detail.
+- Primary buttons are ink pills with a slow, restrained hover; panel content arrives with a short
+  blur-to-sharp reveal (off when Reduce Motion is on).
+- Backdrops: a curated set of eight (Pearl, Mist, Linen, Haze, Stone, Graphite, Ink, Match) replaces
+  the 19 mesh, bokeh and frost styles. Saved styles that used a removed backdrop map to the closest one.
+- Quieter colour swatches and gradients in Add Background, and a minimal disk image background.
+
 ### Planned for 1.1
 - More conversion paths: image to DOCX, Pages, Keynote and Numbers export, RAR extraction.
 - Collage, video snapshot, export GIF tool, audio visualizer and trim silence.

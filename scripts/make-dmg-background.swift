@@ -1,64 +1,69 @@
-// Draws the original DMG window background (660x400 points) at 1x and 2x.
+// Draws the DMG window background (660x400 points) at 1x and 2x.
+// Quiet and editorial: a pearl canvas with a faint top light, a hairline chevron between the two icons,
+// one short line with a single italic word, and a privacy line with a blue lead-in.
 // Usage: swift scripts/make-dmg-background.swift <outdir>
 import AppKit
 
 let out = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : "build/dmg"
 try? FileManager.default.createDirectory(atPath: out, withIntermediateDirectories: true)
 
+func hex(_ h: UInt32, _ a: CGFloat = 1) -> NSColor {
+    NSColor(srgbRed: CGFloat((h >> 16) & 0xFF) / 255, green: CGFloat((h >> 8) & 0xFF) / 255, blue: CGFloat(h & 0xFF) / 255, alpha: a)
+}
+
 func render(scale: CGFloat) -> Data {
-    let w = 660 * scale, h = 400 * scale
-    let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(w), pixelsHigh: Int(h), bitsPerSample: 8,
+    let W: CGFloat = 660, H: CGFloat = 400
+    let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(W * scale), pixelsHigh: Int(H * scale), bitsPerSample: 8,
                                samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB,
                                bytesPerRow: 0, bitsPerPixel: 0)!
-    rep.size = NSSize(width: 660, height: 400)
+    rep.size = NSSize(width: W, height: H)
     NSGraphicsContext.saveGraphicsState()
     NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
     let ctx = NSGraphicsContext.current!.cgContext
-    let rect = CGRect(x: 0, y: 0, width: 660, height: 400)
+    let rect = CGRect(x: 0, y: 0, width: W, height: H)
 
-    // Warm cream to pale saffron wash.
-    let base = NSGradient(colors: [NSColor(red: 1.00, green: 0.985, blue: 0.95, alpha: 1),
-                                   NSColor(red: 1.00, green: 0.93, blue: 0.78, alpha: 1)])!
-    base.draw(in: rect, angle: -70)
-    // Soft citrus glows.
-    func glow(_ x: CGFloat, _ y: CGFloat, _ r: CGFloat, _ c: NSColor) {
-        let g = NSGradient(colors: [c, c.withAlphaComponent(0)])!
-        g.draw(fromCenter: NSPoint(x: x, y: y), radius: 0, toCenter: NSPoint(x: x, y: y), radius: r, options: [])
+    // Canvas: white to #F5F5F7, with a soft light from above.
+    NSGradient(colors: [hex(0xFFFFFF), hex(0xF5F5F7)])!.draw(in: rect, angle: -90)
+    let light = NSGradient(colors: [hex(0xFFFFFF, 0.9), hex(0xFFFFFF, 0)])!
+    light.draw(fromCenter: NSPoint(x: W * 0.5, y: H + 40), radius: 0, toCenter: NSPoint(x: W * 0.5, y: H + 40), radius: 360, options: [])
+
+    // Fine grain, deterministic.
+    var s: UInt64 = 0x9E3779B97F4A7C15
+    let n = Int(W * H * 0.18)
+    for _ in 0..<n {
+        s ^= s << 13; s ^= s >> 7; s ^= s << 17
+        let x = CGFloat(s % UInt64(W * 10)) / 10, y = CGFloat((s >> 20) % UInt64(H * 10)) / 10
+        let dark = (s >> 40) & 1 == 0
+        ctx.setFillColor((dark ? NSColor.black.withAlphaComponent(0.025) : NSColor.white.withAlphaComponent(0.05)).cgColor)
+        ctx.fill(CGRect(x: x, y: y, width: 0.5, height: 0.5))
     }
-    glow(90, 360, 260, NSColor(red: 1.0, green: 0.78, blue: 0.25, alpha: 0.35))
-    glow(600, 40, 280, NSColor(red: 0.55, green: 0.80, blue: 0.45, alpha: 0.18))
 
-    // Dashed arc arrow from the app slot to Applications (icons sit at y = 200 from the top).
-    let y: CGFloat = 400 - 200
-    let path = NSBezierPath()
-    path.move(to: NSPoint(x: 252, y: y + 6))
-    path.curve(to: NSPoint(x: 400, y: y + 6), controlPoint1: NSPoint(x: 295, y: y + 46), controlPoint2: NSPoint(x: 357, y: y + 46))
-    path.lineWidth = 3
-    path.lineCapStyle = .round
-    path.setLineDash([1, 9], count: 2, phase: 0)
-    NSColor(red: 0.85, green: 0.50, blue: 0.05, alpha: 0.75).setStroke()
-    path.stroke()
-    let head = NSBezierPath()
-    head.move(to: NSPoint(x: 388, y: y + 20))
-    head.line(to: NSPoint(x: 404, y: y + 5))
-    head.line(to: NSPoint(x: 384, y: y + 1))
-    head.lineWidth = 3
-    head.lineCapStyle = .round
-    head.lineJoinStyle = .round
-    head.stroke()
+    // Hairline chevron, centred between the icons (icons sit at y = 200 from the top).
+    let cy = H - 200 + 8, cx = W / 2
+    let chev = NSBezierPath()
+    chev.move(to: NSPoint(x: cx - 5, y: cy + 10))
+    chev.line(to: NSPoint(x: cx + 5, y: cy))
+    chev.line(to: NSPoint(x: cx - 5, y: cy - 10))
+    chev.lineWidth = 1.5
+    chev.lineCapStyle = .round
+    chev.lineJoinStyle = .round
+    hex(0xC7C7CC).setStroke()
+    chev.stroke()
 
-    // Caption.
+    // Copy.
     let p = NSMutableParagraphStyle(); p.alignment = .center
-    let title: [NSAttributedString.Key: Any] = [
-        .font: NSFont.systemFont(ofSize: 17, weight: .semibold),
-        .foregroundColor: NSColor(red: 0.20, green: 0.14, blue: 0.04, alpha: 0.9), .paragraphStyle: p]
-    let sub: [NSAttributedString.Key: Any] = [
-        .font: NSFont.systemFont(ofSize: 12, weight: .regular),
-        .foregroundColor: NSColor(red: 0.30, green: 0.22, blue: 0.08, alpha: 0.6), .paragraphStyle: p]
-    NSAttributedString(string: "Drag Yuzu into Applications", attributes: title).draw(in: CGRect(x: 0, y: 72, width: 660, height: 24))
-    NSAttributedString(string: "Then open it from Applications. It lives in the menu bar.", attributes: sub)
-        .draw(in: CGRect(x: 0, y: 50, width: 660, height: 18))
-    _ = ctx
+    let display = NSFont.systemFont(ofSize: 17, weight: .medium)
+    let italic = NSFontManager.shared.convert(display, toHaveTrait: .italicFontMask)
+    let line = NSMutableAttributedString(string: "Drag Yuzu to ", attributes: [.font: display, .foregroundColor: hex(0x1D1D1F), .kern: -0.4, .paragraphStyle: p])
+    line.append(NSAttributedString(string: "Applications", attributes: [.font: italic, .foregroundColor: hex(0x1D1D1F), .kern: -0.4, .paragraphStyle: p]))
+    line.append(NSAttributedString(string: ".", attributes: [.font: display, .foregroundColor: hex(0x1D1D1F), .paragraphStyle: p]))
+    line.draw(in: CGRect(x: 0, y: 70, width: W, height: 24))
+
+    let small = NSFont.systemFont(ofSize: 11.5, weight: .regular)
+    let trust = NSMutableAttributedString(string: "Private by design. ", attributes: [.font: small, .foregroundColor: hex(0x1F6FE5), .paragraphStyle: p])
+    trust.append(NSAttributedString(string: "Every file stays on your Mac.", attributes: [.font: small, .foregroundColor: hex(0x86868B), .paragraphStyle: p]))
+    trust.draw(in: CGRect(x: 0, y: 46, width: W, height: 18))
+
     NSGraphicsContext.restoreGraphicsState()
     return rep.representation(using: .png, properties: [:])!
 }

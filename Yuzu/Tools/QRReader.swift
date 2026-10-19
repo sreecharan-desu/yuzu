@@ -77,7 +77,7 @@ struct QRResultsView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 10) {
                 Image(systemName: "qrcode.viewfinder").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.accentDeep)
-                    .frame(width: 26, height: 26).background(Circle().fill(Theme.accent.opacity(0.16)))
+                    .frame(width: 26, height: 26).background(Circle().fill(Theme.step100))
                 Text("\(items.count) code\(items.count == 1 ? "" : "s") found").font(.system(size: 13, weight: .semibold))
                 Spacer()
             }

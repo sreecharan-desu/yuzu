@@ -90,6 +90,17 @@ final class DebugHooks {
                 let wheel = WheelController.shared.model
                 if target == "wheel" {
                     wheel.snapshotBackdrop = info["bg"].flatMap { NSImage(contentsOfFile: $0) }
+                    if let name = info["backdrop"], let b = Backdrop.named(name),
+                       let cg = Backdrop.smallImage(b, aspect: 1, matching: []) {
+                        wheel.snapshotBackdrop = NSImage(cgImage: cg, size: NSSize(width: Theme.canvas, height: Theme.canvas))
+                    }
+                    if let files = info["files"] {
+                        // Load the ring for these files without putting it on screen.
+                        let urls = files.split(separator: "|").map { URL(fileURLWithPath: String($0)) }
+                        wheel.load(kind: WheelKind(rawValue: info["kind"] ?? "convert") ?? .convert, items: urls)
+                        wheel.isOpen = true
+                        wheel.hoverIndex = info["hover"].flatMap { Int($0) }
+                    }
                     wheel.snapshotScheme = info["appearance"] == "light" ? .light : (info["appearance"] == "dark" ? .dark : nil)
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
@@ -184,7 +195,7 @@ final class DebugHooks {
                 let t = img.map { ImageEdit.trimCaptureShadow($0) }
                 st = BGStyle.forScreenshot(pixelScale: ImageEdit.pixelScale(src), width: Double(t?.image.width ?? 1), captureCorner: t?.corner)
             }
-            if let b = info["backdrop"].flatMap(Backdrop.init(rawValue:)) { st.fill = .backdrop(b) }
+            if let b = info["backdrop"].flatMap(Backdrop.named) { st.fill = .backdrop(b) }
             if let r = info["ratio"], let v = Double(r) { st.ratio = v }
             if info["border"] == "0" { st.border = false }
             let style = st
@@ -251,9 +262,11 @@ final class DebugHooks {
                 try? lines.joined(separator: "\n").write(toFile: NSTemporaryDirectory() + "yuzu-imgbench.txt", atomically: true, encoding: .utf8)
             }
         case "welcome":
+            if let a = info["appearance"] { NSApp.appearance = NSAppearance(named: a == "light" ? .aqua : .darkAqua) }
             WelcomeController.shared.show(background: true)
         case "welcomeClose":
             WelcomeController.shared.close()
+            NSApp.appearance = nil
             UserDefaults.standard.removeObject(forKey: WelcomeController.doneKey)
         case "floatstage":
             let urls = (info["files"] ?? "").split(separator: "|").map { URL(fileURLWithPath: String($0)) }
@@ -309,7 +322,7 @@ final class DebugHooks {
                 if info["parts"] == "1" {
                     var v = base; v.fill = .none; v.shadow = 0; v.border = false; variants.append(("bare", v))
                     v.fill = .solid(.white); variants.append(("+solid", v))
-                    v.fill = .backdrop(.aurora); v.grain = 0; variants.append(("+backdrop", v))
+                    v.fill = .backdrop(.pearl); v.grain = 0; variants.append(("+backdrop", v))
                     v.grain = 0.5; variants.append(("+grain", v))
                     v.border = true; variants.append(("+border", v))
                     v.shadow = base.shadow; variants.append(("+shadow", v))
