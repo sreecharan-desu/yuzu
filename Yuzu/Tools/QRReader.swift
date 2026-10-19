@@ -46,6 +46,7 @@ enum QRReader {
     }
 
     static var lastResults: [Found] = []
+    static func closeWindow() { window?.close(); window = nil }
 
     static func show(_ items: [Found], background: Bool = false) {
         window?.close()
@@ -59,7 +60,9 @@ enum QRReader {
         w.contentView = NSHostingView(rootView: QRResultsView(items: items) { w.close() })
         window = w
         if background {
-            if let s = NSScreen.main?.visibleFrame { w.setFrameOrigin(NSPoint(x: s.midX - 260, y: s.midY - 150)) }
+            w.ignoresMouseEvents = true
+            let maxX = NSScreen.screens.map(\.frame.maxX).max() ?? 0
+            w.setFrameOrigin(NSPoint(x: maxX + 400, y: NSScreen.main?.frame.midY ?? 0))
             w.orderBack(nil)
         } else {
             w.center(); NSApp.activate(); w.makeKeyAndOrderFront(nil)

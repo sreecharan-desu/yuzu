@@ -1,4 +1,5 @@
 import AppKit
+import PDFKit
 import os
 
 /// Local developer hooks driven by `scripts/yuzuctl` (distributed notifications on this Mac only).
@@ -133,7 +134,17 @@ final class DebugHooks {
             ToolPanelController.closeAll()
             ToolPanelController.show(t, urls: urls, background: info["front"] != "1")
             try? "\(ToolPanelController.lastWindowNumber)".write(toFile: NSTemporaryDirectory() + "yuzu-window.txt", atomically: true, encoding: .utf8)
+        case "qr":
+            // Reads codes in a file and shows the results window behind other windows.
+            guard let file = info["file"] else { return }
+            let found: [QRReader.Found]
+            do { found = try QRReader.detect(URL(fileURLWithPath: file)) } catch {
+                try? "ERR \(error)".write(toFile: NSTemporaryDirectory() + "yuzu-window.txt", atomically: true, encoding: .utf8); return
+            }
+            QRReader.show(found, background: true)
+            try? "\(ToolPanelController.lastWindowNumber)".write(toFile: NSTemporaryDirectory() + "yuzu-window.txt", atomically: true, encoding: .utf8)
         case "closePanels":
+            QRReader.closeWindow()
             ToolPanelController.closeAll()
             NSApp.appearance = nil
         case "panelSet":
@@ -163,6 +174,34 @@ final class DebugHooks {
             if info["border"] == "0" { st.border = false }
             JobRunner.execute(label: "Adding background", units: [[src]], near: .zero, reveal: false, quiet: true,
                               work: { u, ctx in try ImageEdit.addBackground(u[0], style: st, ctx: ctx) }) { r in
+                let report = (r.outputs.map { "OK \($0.path) \(String(format: "%.2f", r.seconds))s" } + r.errors.map { "ERR \($0)" }).joined(separator: "\n")
+                try? report.write(toFile: NSTemporaryDirectory() + "yuzu-last-job.txt", atomically: true, encoding: .utf8)
+            }
+        case "tooljob":
+            // Headless run of a panel tool's Save with given settings (same engine calls as the panels).
+            guard let file = info["file"], let tool = info["tool"] else { return }
+            let src = URL(fileURLWithPath: file)
+            func nums(_ k: String) -> [Double] { (info[k] ?? "").split(separator: ",").compactMap { Double($0) } }
+            let n = nums("n")
+            let opts = info
+            JobRunner.execute(label: tool, units: [[src]], near: .zero, reveal: false, quiet: true, work: { u, ctx in
+                switch tool {
+                case "trim": return try ToolEngine.trim(u[0], start: n[0], end: n[1], ctx: ctx)
+                case "speed": return try ToolEngine.speed(u[0], factor: n[0], ctx: ctx)
+                case "split": return try ToolEngine.split(u[0], at: n, ctx: ctx)
+                case "cropVideo": return try ToolEngine.cropVideo(u[0], rect: CGRect(x: n[0], y: n[1], width: n[2], height: n[3]), ctx: ctx)
+                case "bleep": return try ToolEngine.bleep(u[0], ranges: stride(from: 0, to: n.count - 1, by: 2).map { n[$0]...n[$0 + 1] }, entire: false, ctx: ctx)
+                case "channels": return try ToolEngine.channels(u[0], mono: opts["mono"] == "1", left: n[0], right: n[1], ctx: ctx)
+                case "splitPDF":
+                    let count = PDFDocument(url: u[0])?.pageCount ?? 0
+                    return try ToolEngine.splitPDF(u[0], groups: ToolEngine.parseRanges(opts["ranges"] ?? "", pageCount: count), ctx: ctx)
+                case "organize":
+                    // n = page numbers in new order; rot = rotation applied to every listed page index in "rp"
+                    let rp = Set((opts["rp"] ?? "").split(separator: ",").compactMap { Int($0) })
+                    return try ToolEngine.organizePDF(u[0], pages: n.map { (index: Int($0) - 1, rotation: rp.contains(Int($0)) ? 90 : 0) }, ctx: ctx)
+                default: throw YuzuError.unsupported(tool)
+                }
+            }) { r in
                 let report = (r.outputs.map { "OK \($0.path) \(String(format: "%.2f", r.seconds))s" } + r.errors.map { "ERR \($0)" }).joined(separator: "\n")
                 try? report.write(toFile: NSTemporaryDirectory() + "yuzu-last-job.txt", atomically: true, encoding: .utf8)
             }

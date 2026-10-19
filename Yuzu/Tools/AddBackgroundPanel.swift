@@ -58,6 +58,8 @@ struct AddBackgroundPanel: View {
         } controls: {
             ChipPicker(options: [(Mode.photo, "Photo"), (Mode.screenshot, "Screenshot")], selection: Binding(get: { mode }, set: { switchMode($0) }))
 
+            if mode == .screenshot { ratioSection }   // sharing sizes first: the usual first choice for screenshots
+
             if mode == .photo {
                 Toggle(isOn: $style.liftSubject) {
                     VStack(alignment: .leading, spacing: 1) {
@@ -125,10 +127,7 @@ struct AddBackgroundPanel: View {
                 .toggleStyle(AccentSwitchStyle())
             }
 
-            SectionLabel("Ratio")
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 5), count: 3), spacing: 5) {
-                ForEach(Self.ratios, id: \.key) { r in ratioChip(r) }
-            }
+            if mode == .photo { ratioSection }
             if let out = rendered {
                 Text("\(outputSize(out)) · preview \(String(format: "%.0f", lastRenderMS)) ms")
                     .font(.system(size: 10.5).monospacedDigit()).foregroundStyle(.secondary)
@@ -141,6 +140,13 @@ struct AddBackgroundPanel: View {
     }
 
     // MARK: Pieces
+
+    @ViewBuilder private var ratioSection: some View {
+        SectionLabel("Ratio")
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 5), count: 3), spacing: 5) {
+            ForEach(Self.ratios, id: \.key) { r in ratioChip(r) }
+        }
+    }
 
     private func backdropTile(_ b: Backdrop) -> some View {
         let selected = style.fill == .backdrop(b)

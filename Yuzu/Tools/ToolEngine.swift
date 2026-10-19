@@ -192,7 +192,8 @@ enum ToolEngine {
         let t = target(for: src)
         let dest = explicitDest ?? OutputNamer.destination(for: src, ext: t.ext, suffix: FileTool.bleep.suffix)
         let graph = "[0:a]volume='if(\(cond),0,1)':eval=frame[m];" +
-            "sine=f=\(Int(frequency)):sample_rate=48000:d=\(fmt(duration + 0.5)),volume='if(\(cond),0.35,0)':eval=frame[b];" +
+            // sine= starts at 1/8 full scale, so 1.6 brings the tone to about -17 dB RMS, level with normal speech.
+            "sine=f=\(Int(frequency)):sample_rate=48000:d=\(fmt(duration + 0.5)),volume='if(\(cond),1.6,0)':eval=frame[b];" +
             "[m][b]amix=inputs=2:duration=first:normalize=0[out]"
         var args = ["-i", src.path, "-filter_complex", graph]
         if isAudioOnly(src) || explicitDest != nil { args += ["-map", "[out]", "-vn"] + audioCodec(explicitDest.map { Target.same(as: $0.pathExtension) ?? .m4a } ?? t) }
