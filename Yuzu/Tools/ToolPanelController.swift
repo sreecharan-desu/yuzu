@@ -84,11 +84,7 @@ final class ToolPanelController: NSObject, NSWindowDelegate {
         if background {
             // For automated screenshots: render behind other windows without taking focus.
             // Placed past the right edge of all screens and deaf to the mouse: nothing appears or can be clicked.
-            window.level = .normal
-            window.ignoresMouseEvents = true
-            let maxX = NSScreen.screens.map(\.frame.maxX).max() ?? 0
-            window.setFrameOrigin(NSPoint(x: maxX + 400, y: NSScreen.main?.frame.midY ?? 0))
-            window.orderBack(nil)
+            Offscreen.park(window)
         } else {
             window.center()
             NSApp.activate()

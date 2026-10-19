@@ -257,7 +257,7 @@ enum FileActions {
             guard let term = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.Terminal") else { return }
             NSWorkspace.shared.open([folder], withApplicationAt: term, configuration: NSWorkspace.OpenConfiguration())
         case .float:
-            hud.info("Float arrives in a later build", symbol: "paperclip.circle.fill", near: point)
+            FloatController.shared.add(urls, near: point)
         }
     }
 }

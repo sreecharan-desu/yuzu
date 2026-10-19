@@ -24,6 +24,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if !UserDefaults.standard.bool(forKey: "debug.noPrewarm") {
             DispatchQueue.main.async { wheel.prewarm() }
         }
+        if WelcomeController.shouldShowOnLaunch {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { WelcomeController.shared.show() }
+        }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

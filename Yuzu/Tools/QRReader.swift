@@ -60,10 +60,7 @@ enum QRReader {
         w.contentView = NSHostingView(rootView: QRResultsView(items: items) { w.close() })
         window = w
         if background {
-            w.ignoresMouseEvents = true
-            let maxX = NSScreen.screens.map(\.frame.maxX).max() ?? 0
-            w.setFrameOrigin(NSPoint(x: maxX + 400, y: NSScreen.main?.frame.midY ?? 0))
-            w.orderBack(nil)
+            Offscreen.park(w)
         } else {
             w.center(); NSApp.activate(); w.makeKeyAndOrderFront(nil)
         }

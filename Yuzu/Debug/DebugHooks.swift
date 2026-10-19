@@ -11,10 +11,14 @@ final class DebugHooks {
     static let name = Notification.Name("com.sreecharan.yuzu.debug")
     private let log = Logger(subsystem: "com.sreecharan.yuzu", category: "debug")
     private weak var menuBar: MenuBarController?
+    private var stagedFloat: NSWindow?
     private var token: NSObjectProtocol?
 
     init(menuBar: MenuBarController?) {
         self.menuBar = menuBar
+        // Test automation only. Off unless the app is launched with -YuzuDebugHooks YES, so no other
+        // process can drive a normal install.
+        guard UserDefaults.standard.bool(forKey: "YuzuDebugHooks") else { return }
         token = DistributedNotificationCenter.default().addObserver(forName: Self.name, object: nil, queue: .main) { [weak self] note in
             let info = (note.userInfo as? [String: String]) ?? [:]
             MainActor.assumeIsolated { self?.handle(info) }
@@ -246,6 +250,28 @@ final class DebugHooks {
                 }
                 try? lines.joined(separator: "\n").write(toFile: NSTemporaryDirectory() + "yuzu-imgbench.txt", atomically: true, encoding: .utf8)
             }
+        case "welcome":
+            WelcomeController.shared.show(background: true)
+        case "welcomeClose":
+            WelcomeController.shared.close()
+            UserDefaults.standard.removeObject(forKey: WelcomeController.doneKey)
+        case "floatstage":
+            let urls = (info["files"] ?? "").split(separator: "|").map { URL(fileURLWithPath: String($0)) }
+            if let a = info["appearance"] { NSApp.appearance = NSAppearance(named: a == "light" ? .aqua : .darkAqua) }
+            stagedFloat?.orderOut(nil)
+            stagedFloat = FloatController.shared.stageForScreenshot(urls)
+        case "floatstageClose":
+            stagedFloat?.orderOut(nil); stagedFloat = nil
+        case "floatsnap":
+            // Checks edge snapping on pure geometry; nothing moves on screen.
+            let v = NSRect(x: 0, y: 0, width: 1440, height: 875)
+            var out: [String] = []
+            let xs: [CGFloat] = [4, 20, 40, 600, 1440 - 252 - 20, 1440 - 252 - 40, 1300]
+            for x in xs {
+                let r = FloatGeometry.settle(NSRect(x: x, y: 300, width: 252, height: 262), in: v)
+                out.append("x=\(Int(x)) -> \(r.edge?.rawValue ?? "free") \(NSStringFromRect(r.frame))")
+            }
+            try? out.joined(separator: "\n").write(toFile: NSTemporaryDirectory() + "yuzu-floatsnap.txt", atomically: true, encoding: .utf8)
         case "parbench":
             // Converts the same set of images sequentially, then in parallel, and records both wall times.
             guard let dir = info["dir"] else { return }

@@ -18,9 +18,9 @@ enum Prefs {
 
     static func registerDefaults() {
         d.register(defaults: [
-            Key.convertCombo: ModifierCombo.shift.rawValue,
-            Key.toolsCombo: ModifierCombo.command.rawValue,
-            Key.actionsCombo: ModifierCombo.control.rawValue,
+            Key.convertCombo: ModifierCombo.shift.stored,
+            Key.toolsCombo: ModifierCombo.command.stored,
+            Key.actionsCombo: ModifierCombo.control.stored,
             Key.sound: true,
             Key.haptics: true,
             Key.reveal: false,
@@ -31,15 +31,19 @@ enum Prefs {
         ])
     }
 
-    static func combo(for kind: WheelKind) -> ModifierCombo {
-        let key: String
+    static func comboKey(for kind: WheelKind) -> String {
         switch kind {
-        case .convert: key = Key.convertCombo
-        case .tools: key = Key.toolsCombo
-        case .actions: key = Key.actionsCombo
+        case .convert: return Key.convertCombo
+        case .tools: return Key.toolsCombo
+        case .actions: return Key.actionsCombo
         }
-        return ModifierCombo(rawValue: d.integer(forKey: key)) ?? kind.defaultCombo
     }
+
+    static func combo(for kind: WheelKind) -> ModifierCombo {
+        ModifierCombo(stored: d.integer(forKey: comboKey(for: kind))) ?? kind.defaultCombo
+    }
+
+    static func setCombo(_ c: ModifierCombo, for kind: WheelKind) { d.set(c.stored, forKey: comboKey(for: kind)) }
 
     static var sound: Bool { d.bool(forKey: Key.sound) }
     static var haptics: Bool { d.bool(forKey: Key.haptics) }
@@ -69,45 +73,47 @@ enum WheelKind: String, CaseIterable, Sendable {
     }
 }
 
-/// A modifier combination tapped during a drag. Raw value is the NSEvent flag mask.
-enum ModifierCombo: Int, CaseIterable, Identifiable, Sendable {
-    case shift, command, control, option, shiftOption, shiftCommand, controlOption
+/// A modifier combination tapped during a drag (any mix of Control, Option, Shift and Command).
+/// Stored as the NSEvent flag mask. Builds before 1.0 stored a picker index 0...6, which still reads correctly.
+struct ModifierCombo: Hashable, Identifiable, Sendable {
+    static let allowed: NSEvent.ModifierFlags = [.control, .option, .shift, .command]
+    let flags: NSEvent.ModifierFlags
 
-    var id: Int { rawValue }
+    init(_ flags: NSEvent.ModifierFlags) { self.flags = flags.intersection(Self.allowed) }
 
-    var flags: NSEvent.ModifierFlags {
-        switch self {
-        case .shift: return [.shift]
-        case .command: return [.command]
-        case .control: return [.control]
-        case .option: return [.option]
-        case .shiftOption: return [.shift, .option]
-        case .shiftCommand: return [.shift, .command]
-        case .controlOption: return [.control, .option]
-        }
+    private static let legacy: [NSEvent.ModifierFlags] = [
+        [.shift], [.command], [.control], [.option], [.shift, .option], [.shift, .command], [.control, .option],
+    ]
+
+    init?(stored: Int) {
+        if (0..<Self.legacy.count).contains(stored) { self.init(Self.legacy[stored]); return }
+        let f = NSEvent.ModifierFlags(rawValue: UInt(max(stored, 0))).intersection(Self.allowed)
+        guard !f.isEmpty else { return nil }
+        self.init(f)
     }
 
-    var label: String {
-        switch self {
-        case .shift: return "⇧ Shift"
-        case .command: return "⌘ Command"
-        case .control: return "⌃ Control"
-        case .option: return "⌥ Option"
-        case .shiftOption: return "⌥⇧ Option + Shift"
-        case .shiftCommand: return "⇧⌘ Shift + Command"
-        case .controlOption: return "⌃⌥ Control + Option"
-        }
+    var stored: Int { Int(flags.rawValue) }
+    static func == (a: ModifierCombo, b: ModifierCombo) -> Bool { a.flags.rawValue == b.flags.rawValue }
+    func hash(into h: inout Hasher) { h.combine(flags.rawValue) }
+    var id: Int { stored }
+    var isEmpty: Bool { flags.isEmpty }
+
+    static let shift = ModifierCombo([.shift])
+    static let command = ModifierCombo([.command])
+    static let control = ModifierCombo([.control])
+    static let option = ModifierCombo([.option])
+
+    /// Keys in Apple's canonical order.
+    private var parts: [(symbol: String, name: String)] {
+        var out: [(String, String)] = []
+        if flags.contains(.control) { out.append(("⌃", "Control")) }
+        if flags.contains(.option) { out.append(("⌥", "Option")) }
+        if flags.contains(.shift) { out.append(("⇧", "Shift")) }
+        if flags.contains(.command) { out.append(("⌘", "Command")) }
+        return out
     }
 
-    var symbol: String {
-        switch self {
-        case .shift: return "⇧"
-        case .command: return "⌘"
-        case .control: return "⌃"
-        case .option: return "⌥"
-        case .shiftOption: return "⌥⇧"
-        case .shiftCommand: return "⇧⌘"
-        case .controlOption: return "⌃⌥"
-        }
-    }
+    var symbol: String { parts.map(\.symbol).joined() }
+    var names: String { parts.map(\.name).joined(separator: " + ") }
+    var label: String { "\(symbol) \(names)" }
 }

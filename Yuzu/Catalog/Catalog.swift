@@ -273,8 +273,7 @@ enum Catalog {
             guard !items.isEmpty else { return ([], "Drop to see actions") }
             let opts = FileAction.allCases.map { a in
                 WheelOption(id: "action.\(a.rawValue)", title: a.title, symbol: a.symbol,
-                            action: .fileAction(a), enabled: a != .float,
-                            note: a == .float ? "Soon" : nil)
+                            action: .fileAction(a))
             }
             return (opts, nil)
 

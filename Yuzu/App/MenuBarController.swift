@@ -25,6 +25,9 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         return i
     }
 
+    @objc private func showWelcome() { WelcomeController.shared.show() }
+    @objc private func showFloat() { FloatController.shared.add([], near: NSEvent.mouseLocation) }
+
     private func buildMenu() {
         menu.autoenablesItems = false
         let header = NSMenuItem()
@@ -35,6 +38,8 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         menu.addItem(hintItem)
         menu.addItem(.separator())
         menu.addItem(item("Try the Ring", "circle.dotted.circle", #selector(tryRing)))
+        menu.addItem(item("Show Float", "paperclip", #selector(showFloat)))
+        menu.addItem(item("Getting Started…", "sparkles", #selector(showWelcome)))
         menu.addItem(item("Settings…", "gearshape", #selector(openSettings), key: ","))
         loginItem.title = "Launch at Login"
         loginItem.image = NSImage(systemSymbolName: "power", accessibilityDescription: nil)
