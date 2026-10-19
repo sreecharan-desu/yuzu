@@ -90,6 +90,17 @@ final class DebugHooks {
                 let wheel = WheelController.shared.model
                 if target == "wheel" {
                     wheel.snapshotBackdrop = info["bg"].flatMap { NSImage(contentsOfFile: $0) }
+                    if let name = info["backdrop"], let b = Backdrop(rawValue: name),
+                       let cg = Backdrop.smallImage(b, aspect: 1, matching: []) {
+                        wheel.snapshotBackdrop = NSImage(cgImage: cg, size: NSSize(width: Theme.canvas, height: Theme.canvas))
+                    }
+                    if let files = info["files"] {
+                        // Load the ring for these files without putting it on screen.
+                        let urls = files.split(separator: "|").map { URL(fileURLWithPath: String($0)) }
+                        wheel.load(kind: WheelKind(rawValue: info["kind"] ?? "convert") ?? .convert, items: urls)
+                        wheel.isOpen = true
+                        wheel.hoverIndex = info["hover"].flatMap { Int($0) }
+                    }
                     wheel.snapshotScheme = info["appearance"] == "light" ? .light : (info["appearance"] == "dark" ? .dark : nil)
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {

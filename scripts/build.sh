@@ -2,6 +2,7 @@
 # Builds a Release Yuzu.app into dist/, ad-hoc signed. Usage: scripts/build.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
+mkdir -p build
 xcodegen generate --quiet
 xcodebuild -project Yuzu.xcodeproj -scheme Yuzu -configuration Release \
   -derivedDataPath build/DerivedData -destination 'platform=macOS,arch=arm64' \
