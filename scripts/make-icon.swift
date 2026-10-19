@@ -1,4 +1,5 @@
-// Draws Yuzu's original app icon (a citrus cross-section echoing the ring) at 1024 px.
+// Yuzu app icon v2 (original): a glossy whole yuzu fruit with a leaf, orbited by a soft
+// conversion arc, on a deep evergreen squircle. Renders a 1024 px PNG.
 import AppKit
 
 let S: CGFloat = 1024
@@ -13,56 +14,109 @@ let ctx = NSGraphicsContext.current!.cgContext
 func rgb(_ h: UInt32, _ a: CGFloat = 1) -> NSColor {
     NSColor(srgbRed: CGFloat((h >> 16) & 255) / 255, green: CGFloat((h >> 8) & 255) / 255, blue: CGFloat(h & 255) / 255, alpha: a)
 }
+func squircle(_ r: NSRect, _ k: CGFloat = 0.225) -> NSBezierPath {
+    // Continuous-corner approximation: rounded rect with generous radius.
+    NSBezierPath(roundedRect: r, xRadius: r.width * k, yRadius: r.height * k)
+}
 
-// Squircle tile on the standard macOS grid (824 pt body, 100 pt margin).
+// 1. Tile (macOS grid: 824 body inside 1024 canvas)
 let body = NSRect(x: 100, y: 100, width: 824, height: 824)
-let tile = NSBezierPath(roundedRect: body, xRadius: 185, yRadius: 185)
+let tile = squircle(body)
 ctx.saveGState()
-let shadow = NSShadow(); shadow.shadowColor = rgb(0x5A3A00, 0.35); shadow.shadowBlurRadius = 28; shadow.shadowOffset = NSSize(width: 0, height: -12)
-shadow.set()
-rgb(0xFFD54A).setFill(); tile.fill()
+let drop = NSShadow(); drop.shadowColor = rgb(0x000000, 0.30); drop.shadowBlurRadius = 30; drop.shadowOffset = NSSize(width: 0, height: -14); drop.set()
+rgb(0x123B2C).setFill(); tile.fill()
 ctx.restoreGState()
 ctx.saveGState(); tile.addClip()
-NSGradient(colors: [rgb(0xFFF1B8), rgb(0xFFD23F), rgb(0xFFA30F)], atLocations: [0, 0.55, 1], colorSpace: .sRGB)!
-    .draw(in: body, angle: -90)
-// soft top highlight
-NSGradient(colors: [rgb(0xFFFFFF, 0.55), rgb(0xFFFFFF, 0)])!.draw(in: NSRect(x: 100, y: 560, width: 824, height: 364), angle: -90)
+NSGradient(colors: [rgb(0x2E6B4F), rgb(0x174A37), rgb(0x0B2A1F)], atLocations: [0, 0.5, 1], colorSpace: .sRGB)!.draw(in: body, angle: -90)
+// soft top sheen and a warm glow behind the fruit
+NSGradient(colors: [rgb(0xFFFFFF, 0.16), rgb(0xFFFFFF, 0)])!.draw(in: NSRect(x: 100, y: 600, width: 824, height: 324), angle: -90)
+NSGradient(colors: [rgb(0xFFD54A, 0.38), rgb(0xFFD54A, 0)])!.draw(fromCenter: NSPoint(x: 512, y: 470), radius: 0, toCenter: NSPoint(x: 512, y: 470), radius: 420, options: [])
+ctx.restoreGState()
+// hairline inner edge
+ctx.saveGState(); rgb(0xFFFFFF, 0.14).setStroke(); let edge = squircle(body.insetBy(dx: 2, dy: 2)); edge.lineWidth = 3; edge.stroke(); ctx.restoreGState()
+
+let c = NSPoint(x: 512, y: 488)
+let R: CGFloat = 250
+
+// 2. Orbit arc (back half, behind the fruit)
+func arc(_ from: CGFloat, _ to: CGFloat, _ width: CGFloat, _ color: NSColor) {
+    let p = NSBezierPath()
+    p.appendArc(withCenter: .zero, radius: 330, startAngle: from, endAngle: to)
+    var t = AffineTransform(translationByX: c.x, byY: c.y)
+    t.rotate(byDegrees: -18)
+    t.scale(x: 1, y: 0.42)
+    p.transform(using: t)
+    p.lineWidth = width; p.lineCapStyle = .round
+    color.setStroke(); p.stroke()
+}
+arc(14, 166, 24, rgb(0xFFF3C4, 0.35))
+
+// 3. Fruit
+ctx.saveGState()
+let fs = NSShadow(); fs.shadowColor = rgb(0x000000, 0.40); fs.shadowBlurRadius = 40; fs.shadowOffset = NSSize(width: 0, height: -22); fs.set()
+let fruit = NSBezierPath(ovalIn: NSRect(x: c.x - R, y: c.y - R * 0.96, width: 2 * R, height: 2 * R * 0.96))
+rgb(0xF2B705).setFill(); fruit.fill()
+ctx.restoreGState()
+ctx.saveGState(); fruit.addClip()
+NSGradient(colors: [rgb(0xFFF08A), rgb(0xFFD21F), rgb(0xF0A800), rgb(0xB87400)], atLocations: [0, 0.35, 0.72, 1], colorSpace: .sRGB)!
+    .draw(fromCenter: NSPoint(x: c.x - 80, y: c.y + 95), radius: 10, toCenter: c, radius: R * 1.05, options: [.drawsAfterEndingLocation])
+// peel dimples (yuzu's bumpy rind), deterministic pattern
+var seed: UInt64 = 0x9E3779B97F4A7C15
+func rnd() -> CGFloat { seed = seed &* 6364136223846793005 &+ 1442695040888963407; return CGFloat(seed >> 33) / CGFloat(1 << 31) }
+for _ in 0..<170 {
+    let a = rnd() * .pi * 2, r = sqrt(rnd()) * R * 0.95
+    let x = c.x + cos(a) * r, y = c.y + sin(a) * r * 0.96
+    let s = 7 + rnd() * 9
+    rgb(0x9A5A00, 0.045 + 0.045 * (r / R)).setFill()
+    NSBezierPath(ovalIn: NSRect(x: x - s / 2, y: y - s / 2, width: s, height: s)).fill()
+    rgb(0xFFFBE0, 0.06).setFill()
+    NSBezierPath(ovalIn: NSRect(x: x - s / 2 - 2, y: y - s / 2 + 2, width: s * 0.6, height: s * 0.6)).fill()
+}
+// specular highlight
+NSGradient(colors: [rgb(0xFFFFFF, 0.85), rgb(0xFFFFFF, 0)])!
+    .draw(fromCenter: NSPoint(x: c.x - 95, y: c.y + 120), radius: 0, toCenter: NSPoint(x: c.x - 95, y: c.y + 120), radius: 120, options: [])
+// rim light at the bottom
+NSGradient(colors: [rgb(0xFFE27A, 0), rgb(0xFFE27A, 0.35)])!
+    .draw(fromCenter: c, radius: R * 0.75, toCenter: c, radius: R, options: [])
 ctx.restoreGState()
 
-// Citrus slice
-let c = NSPoint(x: 512, y: 500)
-func circle(_ r: CGFloat) -> NSBezierPath { NSBezierPath(ovalIn: NSRect(x: c.x - r, y: c.y - r, width: 2 * r, height: 2 * r)) }
-ctx.saveGState()
-let s2 = NSShadow(); s2.shadowColor = rgb(0x7A4300, 0.35); s2.shadowBlurRadius = 30; s2.shadowOffset = NSSize(width: 0, height: -14); s2.set()
-rgb(0xF29A0B).setFill(); circle(300).fill()                  // rind
-ctx.restoreGState()
-NSGradient(colors: [rgb(0xFFB524), rgb(0xE97F00)])!.draw(in: circle(300), angle: -90)
-rgb(0xFFF6DC).setFill(); circle(262).fill()                  // pith
-let segments = 8
-for i in 0..<segments {
-    let mid = CGFloat(i) / CGFloat(segments) * .pi * 2 + .pi / 2
-    let half = (.pi / CGFloat(segments)) - 0.075
-    let p = NSBezierPath()
-    p.appendArc(withCenter: c, radius: 238, startAngle: (mid - half) * 180 / .pi, endAngle: (mid + half) * 180 / .pi)
-    p.appendArc(withCenter: c, radius: 62, startAngle: (mid + half) * 180 / .pi, endAngle: (mid - half) * 180 / .pi, clockwise: true)
-    p.close()
-    p.lineJoinStyle = .round
-    ctx.saveGState(); p.addClip()
-    NSGradient(colors: [rgb(0xFFE15C), rgb(0xFFB70F)])!.draw(fromCenter: c, radius: 60, toCenter: c, radius: 240, options: [])
-    // juice vesicle sheen
-    rgb(0xFFFFFF, 0.22).setFill()
-    let hx = c.x + cos(mid) * 170, hy = c.y + sin(mid) * 170
-    NSBezierPath(ovalIn: NSRect(x: hx - 26, y: hy - 18, width: 52, height: 36)).fill()
-    ctx.restoreGState()
-    rgb(0xFFF6DC).setStroke(); p.lineWidth = 10; p.stroke()
-}
-rgb(0xFFF6DC).setFill(); circle(46).fill()
-// leaf
+// 4. Stem nub and leaf
+rgb(0x6B4A12).setFill()
+NSBezierPath(ovalIn: NSRect(x: c.x + 8, y: c.y + R * 0.9, width: 34, height: 26)).fill()
 let leaf = NSBezierPath()
-leaf.move(to: NSPoint(x: 640, y: 760))
-leaf.curve(to: NSPoint(x: 800, y: 840), controlPoint1: NSPoint(x: 680, y: 850), controlPoint2: NSPoint(x: 760, y: 870))
-leaf.curve(to: NSPoint(x: 640, y: 760), controlPoint1: NSPoint(x: 790, y: 780), controlPoint2: NSPoint(x: 700, y: 740))
-NSGradient(colors: [rgb(0x7BC74D), rgb(0x3E8E2F)])!.draw(in: leaf, angle: 30)
+let base = NSPoint(x: c.x + 30, y: c.y + R * 0.95)
+leaf.move(to: base)
+leaf.curve(to: NSPoint(x: c.x + 250, y: c.y + R * 1.30), controlPoint1: NSPoint(x: c.x + 70, y: c.y + R * 1.42), controlPoint2: NSPoint(x: c.x + 190, y: c.y + R * 1.48))
+leaf.curve(to: base, controlPoint1: NSPoint(x: c.x + 215, y: c.y + R * 1.02), controlPoint2: NSPoint(x: c.x + 110, y: c.y + R * 0.88))
+ctx.saveGState()
+let ls = NSShadow(); ls.shadowColor = rgb(0x000000, 0.30); ls.shadowBlurRadius = 16; ls.shadowOffset = NSSize(width: 0, height: -8); ls.set()
+rgb(0x4CAF50).setFill(); leaf.fill()
+ctx.restoreGState()
+ctx.saveGState(); leaf.addClip()
+NSGradient(colors: [rgb(0x9BE36A), rgb(0x3E9B3A), rgb(0x1F6B2A)], atLocations: [0, 0.55, 1], colorSpace: .sRGB)!.draw(in: leaf, angle: -35)
+let vein = NSBezierPath(); vein.move(to: base)
+vein.curve(to: NSPoint(x: c.x + 240, y: c.y + R * 1.30), controlPoint1: NSPoint(x: c.x + 110, y: c.y + R * 1.18), controlPoint2: NSPoint(x: c.x + 180, y: c.y + R * 1.26))
+vein.lineWidth = 6; rgb(0xE8FFD0, 0.55).setStroke(); vein.stroke()
+ctx.restoreGState()
+
+// 5. Orbit arc (front half, over the fruit) with an arrowhead: the "convert" motif
+arc(194, 338, 26, rgb(0xFFF7DA, 0.92))
+do {
+    // arrowhead at 330 degrees on the transformed ellipse
+    let a: CGFloat = 338 * .pi / 180
+    var t = AffineTransform(translationByX: c.x, byY: c.y); t.rotate(byDegrees: -18); t.scale(x: 1, y: 0.42)
+    let p0 = t.transform(NSPoint(x: cos(a) * 330, y: sin(a) * 330))
+    let p1 = t.transform(NSPoint(x: cos(a + 0.05) * 330, y: sin(a + 0.05) * 330))
+    let dir = atan2(p1.y - p0.y, p1.x - p0.x)
+    let head = NSBezierPath()
+    let L: CGFloat = 64, W: CGFloat = 40
+    let tip = NSPoint(x: p0.x + cos(dir) * L * 0.6, y: p0.y + sin(dir) * L * 0.6)
+    head.move(to: tip)
+    head.line(to: NSPoint(x: p0.x - cos(dir) * L * 0.4 + cos(dir + .pi / 2) * W, y: p0.y - sin(dir) * L * 0.4 + sin(dir + .pi / 2) * W))
+    head.line(to: NSPoint(x: p0.x - cos(dir) * L * 0.4 - cos(dir + .pi / 2) * W, y: p0.y - sin(dir) * L * 0.4 - sin(dir + .pi / 2) * W))
+    head.close(); head.lineJoinStyle = .round; head.lineWidth = 10
+    rgb(0xFFF7DA, 0.95).setFill(); rgb(0xFFF7DA, 0.95).setStroke(); head.fill(); head.stroke()
+}
 
 NSGraphicsContext.restoreGraphicsState()
 try! rep.representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: out))

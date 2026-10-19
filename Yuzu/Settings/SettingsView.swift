@@ -17,7 +17,8 @@ private struct GeneralPane: View {
     @ObservedObject private var login = LoginItem.shared
     @AppStorage(Prefs.Key.sound) private var sound = true
     @AppStorage(Prefs.Key.haptics) private var haptics = true
-    @AppStorage(Prefs.Key.reveal) private var reveal = true
+    @AppStorage(Prefs.Key.reveal) private var reveal = false
+    @AppStorage(Prefs.Key.hudPlacement) private var placement = "nearPointer"
 
     var body: some View {
         Form {
@@ -42,6 +43,10 @@ private struct GeneralPane: View {
             }
             Section("Results") {
                 Toggle("Reveal finished files in Finder", isOn: $reveal)
+                Picker("Show results", selection: $placement) {
+                    Text("Near the pointer").tag("nearPointer")
+                    Text("Top of the screen").tag("topCenter")
+                }
                 Text("Converted and edited copies are always saved next to the original. Originals are never changed.")
                     .font(.caption).foregroundStyle(.secondary)
             }

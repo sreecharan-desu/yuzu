@@ -65,8 +65,9 @@ final class DebugHooks {
                 return
             }
             let screen = NSScreen.main?.frame ?? .zero
-            JobRunner.run(opt, urls: [url], near: NSPoint(x: screen.midX, y: screen.midY), reveal: false) { outs, errs in
-                let report = (outs.map { "OK \($0.path)" } + errs.map { "ERR \($0)" }).joined(separator: "\n")
+            JobRunner.run(opt, urls: [url], near: NSPoint(x: screen.midX, y: screen.midY), reveal: false,
+                          quiet: info["quiet"] == "1") { r in
+                let report = (r.outputs.map { "OK \($0.path)" } + r.errors.map { "ERR \($0)" }).joined(separator: "\n")
                 try? report.write(toFile: NSTemporaryDirectory() + "yuzu-last-job.txt", atomically: true, encoding: .utf8)
                 self.log.info("job result: \(report, privacy: .public)")
             }
@@ -91,6 +92,25 @@ final class DebugHooks {
                 }
                 self.log.info("snapshot written \(path, privacy: .public)")
             }
+        case "toast":
+            let hud = HUDController.shared
+            let f = NSScreen.main?.frame ?? .zero
+            let pt = NSPoint(x: Double(info["x"] ?? "") ?? f.midX, y: Double(info["y"] ?? "") ?? f.midY)
+            if let a = info["appearance"] { NSApp.appearance = NSAppearance(named: a == "light" ? .aqua : .darkAqua) }
+            let title = info["title"] ?? "Saved photo.jpg"
+            let detail = info["detail"] ?? ""
+            switch info["state"] ?? "success" {
+            case "working":
+                hud.begin(title: title, near: pt)
+                hud.progress(Double(info["fraction"] ?? "0.42") ?? 0.42, detail: detail.isEmpty ? nil : detail)
+            case "error": hud.failure(title, detail: detail, near: pt)
+            case "info": hud.info(title, symbol: info["symbol"] ?? "link.circle.fill", near: pt)
+            default: hud.success(title, detail: detail, near: pt)
+            }
+            if info["hold"] == "1" { hud.hold() }
+        case "hideToast":
+            HUDController.shared.hide()
+            NSApp.appearance = nil
         case "closeSettings":
             SettingsWindowController.shared.window?.performClose(nil)
         case "quit":

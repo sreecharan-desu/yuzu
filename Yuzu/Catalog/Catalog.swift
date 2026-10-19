@@ -109,8 +109,102 @@ enum FileAction: String, CaseIterable, Sendable {
     }
 }
 
+enum FileKind: String, Sendable {
+    case image, video, audio, pdf, document, slides, spreadsheet, subtitle, archive, folder, other
+
+    static let videoExts: Set<String> = ["mp4", "m4v", "mov", "mkv", "webm", "avi", "wmv", "flv", "mpg", "mpeg", "3gp", "ts", "mts"]
+    static let audioExts: Set<String> = ["mp3", "m4a", "aac", "wav", "flac", "ogg", "oga", "opus", "aiff", "aif", "wma", "caf", "alac"]
+    static let documentExts: Set<String> = ["docx", "doc", "rtf", "rtfd", "html", "htm", "txt", "text", "md", "markdown", "odt", "pages", "epub", "textclipping", "webarchive"]
+    static let slidesExts: Set<String> = ["ppt", "pptx", "key", "odp"]
+    static let sheetExts: Set<String> = ["xlsx", "xls", "ods", "csv", "tsv", "numbers"]
+    static let subtitleExts: Set<String> = ["srt", "vtt"]
+    static let archiveExts: Set<String> = ["zip", "tar", "tgz", "gz", "tbz", "bz2", "txz", "xz"]
+
+    static func of(_ url: URL) -> FileKind {
+        let ext = url.pathExtension.lowercased()
+        let isDir = (try? url.resourceValues(forKeys: [.isDirectoryKey, .isPackageKey]))
+        if isDir?.isDirectory == true && isDir?.isPackage != true && ext != "rtfd" { return .folder }
+        if ext == "pdf" { return .pdf }
+        if videoExts.contains(ext) { return .video }
+        if audioExts.contains(ext) { return .audio }
+        if documentExts.contains(ext) { return .document }
+        if slidesExts.contains(ext) { return .slides }
+        if sheetExts.contains(ext) { return .spreadsheet }
+        if subtitleExts.contains(ext) { return .subtitle }
+        if archiveExts.contains(ext) { return .archive }
+        if ext == "svg" { return .image }
+        if Catalog.isImage(url) { return .image }
+        return .other
+    }
+}
+
+/// Non-image conversion targets.
+enum Target: String, CaseIterable, Sendable {
+    // media
+    case mp4, mov, mkv, webm, avi, wmv, gif, mp3, m4a, wav, flac, ogg, opus, aiff, wma
+    // documents and PDF
+    case docx, pages, pptx, xlsx, jpgPages, pngPages, epub, txt, md, html, rtf, pdf, odt
+    // slides and sheets
+    case key, odp, ods, csv, tsv, numbers
+    // subtitles and archives
+    case srt, vtt, zip, tar, tgz, extract
+
+    var title: String {
+        switch self {
+        case .jpgPages: return "JPG"
+        case .pngPages: return "PNG"
+        case .webm: return "WebM"
+        case .opus: return "Opus"
+        case .md: return "MD"
+        case .pages: return "Pages"
+        case .key: return "Keynote"
+        case .numbers: return "Numbers"
+        case .tgz: return "GZIP"
+        case .extract: return "Extract"
+        default: return rawValue.uppercased()
+        }
+    }
+
+    var ext: String {
+        switch self {
+        case .jpgPages: return "jpg"
+        case .pngPages: return "png"
+        case .tgz: return "tar.gz"
+        case .extract: return ""
+        default: return rawValue
+        }
+    }
+
+    var symbol: String? { self == .extract ? "arrow.up.bin" : nil }
+
+    /// The iWork app that must save this format, if any.
+    var iWorkApp: String? {
+        switch self {
+        case .pages: return "Pages"
+        case .key: return "Keynote"
+        case .numbers: return "Numbers"
+        default: return nil
+        }
+    }
+
+    /// Canonical target for a source extension, used to hide "convert to itself".
+    static func same(as ext: String) -> Target? {
+        switch ext {
+        case "htm", "html": return .html
+        case "markdown", "md": return .md
+        case "text", "txt": return .txt
+        case "aif", "aiff": return .aiff
+        case "oga", "ogg": return .ogg
+        case "m4v": return .mp4
+        case "gz", "tgz": return .tgz
+        default: return Target(rawValue: ext)
+        }
+    }
+}
+
 enum OptionAction: Sendable, Equatable {
     case convertImage(ImageFormat)
+    case convertFile(Target)
     case imageTool(ImageTool)
     case fileAction(FileAction)
 }
@@ -126,8 +220,49 @@ struct WheelOption: Identifiable, Equatable, Sendable {
 
 enum Catalog {
     static func isImage(_ url: URL) -> Bool {
-        guard let t = UTType(filenameExtension: url.pathExtension.lowercased()) else { return false }
+        let ext = url.pathExtension.lowercased()
+        if ext == "svg" { return true }
+        guard let t = UTType(filenameExtension: ext) else { return false }
         return t.conforms(to: .image) && !t.conforms(to: .pdf)
+    }
+
+    static func targets(for kind: FileKind, sourceExt: String) -> [Target] {
+        let list: [Target]
+        switch kind {
+        case .video: list = [.mp4, .mov, .mkv, .webm, .avi, .wmv, .gif, .mp3, .m4a]
+        case .audio: list = [.mp3, .m4a, .wav, .flac, .ogg, .opus, .aiff, .wma]
+        case .pdf: list = [.docx, .pages, .pptx, .xlsx, .jpgPages, .pngPages, .epub, .txt, .md]
+        case .document: list = [.docx, .pdf, .pages, .md, .txt, .html, .epub, .rtf, .odt]
+        case .slides: list = [.pdf, .pngPages, .jpgPages, .pptx, .key, .odp]
+        case .spreadsheet: list = [.xlsx, .csv, .tsv, .ods, .pdf, .numbers]
+        case .subtitle: list = [.srt, .vtt, .txt]
+        case .archive: list = [.extract, .zip, .tar, .tgz]
+        case .folder: list = [.zip, .tar, .tgz]
+        default: list = []
+        }
+        var same = Target.same(as: sourceExt)
+        if kind == .archive, ["tar.gz", "tgz", "gz"].contains(where: { sourceExt.hasSuffix($0) }) { same = .tgz }
+        if kind == .slides, sourceExt == "ppt" { same = nil }
+        return list.filter { $0 != same }
+    }
+
+    /// Tool notes for a target so the petal can say what it relies on.
+    static func requirementNote(_ t: Target, kind: FileKind) -> String? {
+        if let app = t.iWorkApp {
+            return FileManager.default.fileExists(atPath: "/Applications/\(app).app") ? "via \(app)" : "Needs \(app)"
+        }
+        switch kind {
+        case .video, .audio:
+            if ToolLocator.ffmpeg == nil, ![.mov, .mp4, .m4a].contains(t) { return "Needs ffmpeg" }
+        case .slides:
+            if ToolLocator.soffice == nil { return "Needs LibreOffice" }
+        case .spreadsheet:
+            if ToolLocator.soffice == nil, !(t == .csv || t == .tsv) { return "Needs LibreOffice" }
+        case .pdf:
+            if ToolLocator.soffice == nil, [.pptx, .xlsx].contains(t) { return "Needs LibreOffice" }
+        default: break
+        }
+        return nil
     }
 
     /// Returns options for the wheel, or a message explaining why there are none.
@@ -144,21 +279,31 @@ enum Catalog {
 
         case .convert:
             guard !items.isEmpty else { return ([], "Reading file…") }
-            guard items.allSatisfy(isImage) else {
-                return ([], items.count > 1 ? "No shared formats" : "No formats yet")
+            let kinds = Set(items.map(FileKind.of))
+            guard kinds.count == 1, let fileKind = kinds.first, fileKind != .other else {
+                return ([], kinds.count > 1 ? "No shared formats" : "No formats yet")
             }
-            let sources = Set(items.compactMap(ImageFormat.of))
-            let opts = ImageFormat.allCases
-                .filter { $0.isAvailable }
-                .filter { !(sources.count == 1 && sources.contains($0)) }
-                .prefix(Theme.maxPetals)
-                .map { WheelOption(id: "convert.\($0.rawValue)", title: $0.title, symbol: nil, action: .convertImage($0)) }
-            return (Array(opts), nil)
+            if fileKind == .image {
+                let sources = Set(items.compactMap(ImageFormat.of))
+                let opts = ImageFormat.allCases
+                    .filter { $0.isAvailable }
+                    .filter { !(sources.count == 1 && sources.contains($0)) }
+                    .prefix(Theme.maxPetals)
+                    .map { WheelOption(id: "convert.\($0.rawValue)", title: $0.title, symbol: nil, action: .convertImage($0)) }
+                return (Array(opts), nil)
+            }
+            let exts = Set(items.map { $0.pathExtension.lowercased() })
+            let sourceExt = exts.count == 1 ? exts.first! : ""
+            let opts = targets(for: fileKind, sourceExt: sourceExt).prefix(Theme.maxPetals).map { t in
+                WheelOption(id: "file.\(t.rawValue)", title: t.title, symbol: t.symbol,
+                            action: .convertFile(t), note: requirementNote(t, kind: fileKind))
+            }
+            return (Array(opts), opts.isEmpty ? "No formats yet" : nil)
 
         case .tools:
             guard !items.isEmpty else { return ([], "Reading file…") }
             guard items.allSatisfy(isImage) else {
-                return ([], items.count > 1 ? "No shared tools" : "No tools yet")
+                return ([], items.count > 1 ? "No shared tools" : "Tools for this type arrive soon")
             }
             let opts = ImageTool.allCases.map {
                 WheelOption(id: "tool.\($0.rawValue)", title: $0.title, symbol: $0.symbol, action: .imageTool($0))

@@ -16,7 +16,7 @@ enum Theme {
     static let petalGap: CGFloat = 10
     static let petalCorner: CGFloat = 24
     static let canvas: CGFloat = 400             // panel size around the wheel
-    static let maxPetals = 8
+    static let maxPetals = 10
     static let minSlots = 4
 
     // Motion

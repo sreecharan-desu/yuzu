@@ -2,24 +2,35 @@ import AppKit
 import SwiftUI
 import Combine
 
+/// One compact glass pill for progress and results: icon + one line + optional size delta.
 @MainActor
 final class HUDModel: ObservableObject {
-    enum State { case working, done, failed }
+    enum State: Equatable { case working, success, failure, info }
+    @Published var state: State = .working
+    @Published var symbol = "checkmark.circle.fill"
     @Published var title = ""
     @Published var detail = ""
     @Published var fraction: Double = 0
-    @Published var state: State = .working
     @Published var visible = false
+    @Published var reduceTransparency = NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency
+    @Published var reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
     var outputs: [URL] = []
+    var fullError = ""
 }
+
+enum HUDPlacement: String { case nearPointer, topCenter }
 
 @MainActor
 final class HUDController {
     static let shared = HUDController()
     let model = HUDModel()
+    var onCancel: (() -> Void)?
     private var panel: NSPanel?
     private var hideWork: DispatchWorkItem?
-    private let size = NSSize(width: 340, height: 104)
+    private let size = NSSize(width: 520, height: 96)
+    private var observers: [NSObjectProtocol] = []
+
+    var panelForSnapshot: NSWindow? { panel }
 
     private func ensurePanel() -> NSPanel {
         if let panel { return panel }
@@ -28,69 +39,107 @@ final class HUDController {
         p.isOpaque = false
         p.backgroundColor = .clear
         p.hasShadow = false
-        p.level = .floating
-        p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle]
+        p.level = .statusBar
+        p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle, .stationary]
         p.isReleasedWhenClosed = false
         p.hidesOnDeactivate = false
-        let host = NSHostingView(rootView: HUDView(model: model, onClose: { [weak self] in self?.hide() },
-                                                   onReveal: { [weak self] in self?.reveal() }))
+        p.animationBehavior = .none
+        let host = NSHostingView(rootView: HUDView(model: model,
+                                                   onTap: { [weak self] in self?.tapped() },
+                                                   onCancel: { [weak self] in self?.onCancel?() }))
         host.frame = NSRect(origin: .zero, size: size)
         p.contentView = host
         panel = p
+        let nc = NSWorkspace.shared.notificationCenter
+        observers.append(nc.addObserver(forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.model.reduceTransparency = NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency
+                self?.model.reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+            }
+        })
         return p
     }
 
     private func place(near point: NSPoint) {
         let p = ensurePanel()
+        let placement = HUDPlacement(rawValue: Prefs.d.string(forKey: Prefs.Key.hudPlacement) ?? "") ?? .nearPointer
         let screen = NSScreen.screens.first { NSMouseInRect(point, $0.frame, false) } ?? NSScreen.main
-        var origin = NSPoint(x: point.x - size.width / 2, y: point.y + 60)
-        if let vf = screen?.visibleFrame {
-            origin.x = min(max(origin.x, vf.minX + 8), vf.maxX - size.width - 8)
-            origin.y = min(max(origin.y, vf.minY + 8), vf.maxY - size.height - 8)
+        guard let vf = screen?.visibleFrame else { return }
+        var origin: NSPoint
+        switch placement {
+        case .topCenter: origin = NSPoint(x: vf.midX - size.width / 2, y: vf.maxY - size.height - 6)
+        case .nearPointer: origin = NSPoint(x: point.x - size.width / 2, y: point.y - size.height / 2)
         }
+        origin.x = min(max(origin.x, vf.minX), vf.maxX - size.width)
+        origin.y = min(max(origin.y, vf.minY), vf.maxY - size.height)
         p.setFrameOrigin(origin)
         p.orderFrontRegardless()
     }
 
-    var panelForSnapshot: NSWindow? { panel }
+    private var spring: Animation { model.reduceMotion ? .easeOut(duration: 0.15) : .spring(response: 0.38, dampingFraction: 0.78) }
 
-    func begin(title: String, detail: String, near point: NSPoint) {
+    private func show(near point: NSPoint?) {
         hideWork?.cancel()
-        model.title = title
-        model.detail = detail
-        model.fraction = 0.04
-        model.state = .working
-        model.outputs = []
-        place(near: point)
-        withAnimation(Theme.bloom) { model.visible = true }
+        if let point, !model.visible { place(near: point) } else if panel == nil, let point { place(near: point) }
+        panel?.orderFrontRegardless()
+        withAnimation(spring) { model.visible = true }
     }
 
-    func progress(_ f: Double, detail: String?) {
-        withAnimation(.easeOut(duration: 0.2)) { model.fraction = max(model.fraction, f) }
+    func begin(title: String, near point: NSPoint) {
+        model.outputs = []
+        model.fullError = ""
+        withAnimation(spring) {
+            model.state = .working
+            model.symbol = "arrow.triangle.2.circlepath"
+            model.title = title
+            model.detail = ""
+            model.fraction = 0
+        }
+        show(near: point)
+    }
+
+    func progress(_ f: Double, detail: String? = nil) {
+        guard model.state == .working else { return }
+        withAnimation(.linear(duration: 0.12)) { model.fraction = max(model.fraction, min(f, 1)) }
         if let detail { model.detail = detail }
     }
 
-    func finish(success: Bool, title: String, detail: String, outputs: [URL]) {
+    func success(_ title: String, detail: String = "", symbol: String = "checkmark.circle.fill", outputs: [URL] = [], near point: NSPoint? = nil) {
         model.outputs = outputs
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+        withAnimation(spring) {
+            model.state = .success
+            model.symbol = symbol
+            model.title = title
+            model.detail = detail
             model.fraction = 1
-            model.state = success ? .done : .failed
+        }
+        show(near: point)
+        scheduleHide(after: 1.8)
+    }
+
+    func failure(_ title: String, detail: String, near point: NSPoint? = nil) {
+        model.outputs = []
+        model.fullError = detail
+        withAnimation(spring) {
+            model.state = .failure
+            model.symbol = "exclamationmark.triangle.fill"
             model.title = title
             model.detail = detail
         }
-        scheduleHide(after: success ? 2.2 : 6)
+        show(near: point)
+        scheduleHide(after: 4.5)
     }
 
-    func toast(_ text: String, near point: NSPoint, success: Bool = true) {
-        hideWork?.cancel()
-        model.title = text
-        model.detail = ""
-        model.fraction = 1
-        model.state = success ? .done : .failed
+    func info(_ title: String, symbol: String, near point: NSPoint) {
         model.outputs = []
-        place(near: point)
-        withAnimation(Theme.bloom) { model.visible = true }
-        scheduleHide(after: 1.6)
+        withAnimation(spring) {
+            model.state = .info
+            model.symbol = symbol
+            model.title = title
+            model.detail = ""
+        }
+        show(near: point)
+        scheduleHide(after: 1.8)
     }
 
     private func scheduleHide(after s: TimeInterval) {
@@ -101,77 +150,151 @@ final class HUDController {
     }
 
     func hide() {
-        withAnimation(Theme.close) { model.visible = false }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+        hideWork?.cancel()
+        withAnimation(model.reduceMotion ? .easeIn(duration: 0.12) : .spring(response: 0.3, dampingFraction: 0.9)) { model.visible = false }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
             guard let self, !self.model.visible else { return }
             self.panel?.orderOut(nil)
         }
     }
 
-    private func reveal() {
-        if !model.outputs.isEmpty { NSWorkspace.shared.activateFileViewerSelecting(model.outputs) }
+    private func tapped() {
+        switch model.state {
+        case .working: return
+        case .success:
+            if !model.outputs.isEmpty { NSWorkspace.shared.activateFileViewerSelecting(model.outputs) }
+        default: break
+        }
         hide()
     }
+
+    /// Keeps the pill visible (for screenshots and tests).
+    func hold() { hideWork?.cancel() }
 }
 
 private struct HUDView: View {
     @ObservedObject var model: HUDModel
-    let onClose: () -> Void
-    let onReveal: () -> Void
+    let onTap: () -> Void
+    let onCancel: () -> Void
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Button(action: onClose) {
-                Image(systemName: "xmark").font(.system(size: 11, weight: .bold))
-                    .frame(width: 26, height: 26)
-            }
-            .buttonStyle(.plain)
-            .glassEffect(.regular.interactive(), in: Circle())
+        pill
+            .scaleEffect(model.visible ? 1 : (model.reduceMotion ? 1 : 0.86))
+            .offset(y: model.visible ? 0 : (model.reduceMotion ? 0 : 10))
+            .opacity(model.visible ? 1 : 0)
+            .frame(width: 520, height: 96)
+    }
 
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 6) {
-                    if model.state == .done {
-                        Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.accentDeep)
-                            .transition(.scale.combined(with: .opacity))
-                    } else if model.state == .failed {
-                        Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
-                    }
-                    Text(model.title).font(.system(size: 15, weight: .semibold)).lineLimit(1)
-                }
-                if !model.detail.isEmpty {
-                    Text(model.detail).font(.system(size: 12)).foregroundStyle(.secondary)
-                        .lineLimit(2).truncationMode(.middle)
-                }
-                if model.state == .working {
-                    ProgressBar(fraction: model.fraction)
-                } else if !model.outputs.isEmpty {
-                    Text("Click to show in Finder").font(.system(size: 11, weight: .medium)).foregroundStyle(.tertiary)
-                }
-            }
-            Spacer(minLength: 0)
+    private var tint: Color {
+        switch model.state {
+        case .failure: return Color(red: 0.96, green: 0.42, blue: 0.20)
+        default: return Theme.accentDeep
         }
-        .padding(14)
-        .frame(width: 320, alignment: .leading)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .contentShape(Rectangle())
-        .onTapGesture(perform: onReveal)
-        .scaleEffect(model.visible ? 1 : 0.92)
-        .opacity(model.visible ? 1 : 0)
-        .offset(y: model.visible ? 0 : -8)
-        .frame(width: 340, height: 104)
+    }
+
+    private var pill: some View {
+        HStack(spacing: 10) {
+            leading
+            Text(model.title)
+                .font(.system(size: 13.5, weight: .semibold))
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .contentTransition(.opacity)
+            if !model.detail.isEmpty {
+                Text(model.detail)
+                    .font(.system(size: 12, weight: .medium).monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .contentTransition(.numericText())
+            }
+            if model.state == .working && model.fraction > 0.005 && model.detail.isEmpty {
+                Text("\(Int(model.fraction * 100))%")
+                    .font(.system(size: 12, weight: .medium).monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .contentTransition(.numericText())
+            }
+            if model.state == .working {
+                Button(action: onCancel) {
+                    Image(systemName: "xmark").font(.system(size: 9.5, weight: .bold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 18, height: 18)
+                        .background(Circle().fill(Color.primary.opacity(0.08)))
+                }
+                .buttonStyle(.plain)
+                .help("Cancel")
+                .transition(.opacity.combined(with: .scale))
+            }
+        }
+        .padding(.leading, 12)
+        .padding(.trailing, 16)
+        .frame(height: 40)
+        .frame(maxWidth: 480)
+        .fixedSize(horizontal: true, vertical: false)
+        .background(background)
+        .contentShape(Capsule())
+        .onTapGesture(perform: onTap)
+        .help(model.fullError)
+        .animation(.spring(response: 0.32, dampingFraction: 0.82), value: model.state)
+        .animation(.spring(response: 0.32, dampingFraction: 0.82), value: model.title)
+    }
+
+    @ViewBuilder private var leading: some View {
+        ZStack {
+            if model.state == .working {
+                Circle().stroke(Color.primary.opacity(0.14), lineWidth: 2.5)
+                Circle().trim(from: 0, to: max(0.04, model.fraction))
+                    .stroke(LinearGradient(colors: [Theme.accent, Theme.accentDeep], startPoint: .top, endPoint: .bottom),
+                            style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+            } else {
+                Image(systemName: model.symbol)
+                    .font(.system(size: 17, weight: .semibold))
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.white, tint)
+                    .transition(.scale(scale: 0.4).combined(with: .opacity))
+            }
+        }
+        .frame(width: 20, height: 20)
+    }
+
+    @ViewBuilder private var background: some View {
+        if model.reduceTransparency {
+            Capsule()
+                .fill(Color(nsColor: .windowBackgroundColor))
+                .overlay(Capsule().strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5))
+                .shadow(color: .black.opacity(scheme == .dark ? 0.5 : 0.16), radius: 14, y: 6)
+        } else {
+            Capsule()
+                .fill(Color.clear)
+                .glassEffect(.regular, in: Capsule())
+                .shadow(color: .black.opacity(scheme == .dark ? 0.35 : 0.12), radius: 16, y: 6)
+        }
     }
 }
 
-private struct ProgressBar: View {
-    let fraction: Double
-    var body: some View {
-        GeometryReader { g in
-            ZStack(alignment: .leading) {
-                Capsule().fill(Color.primary.opacity(0.12))
-                Capsule().fill(LinearGradient(colors: [Theme.accent, Theme.accentDeep], startPoint: .leading, endPoint: .trailing))
-                    .frame(width: max(6, g.size.width * fraction))
+enum SizeText {
+    static func of(_ urls: [URL]) -> Int64 {
+        urls.reduce(0) { total, u in
+            let v = try? u.resourceValues(forKeys: [.fileSizeKey, .isDirectoryKey])
+            if v?.isDirectory == true {
+                let e = FileManager.default.enumerator(at: u, includingPropertiesForKeys: [.fileSizeKey])
+                var s: Int64 = 0
+                while let f = e?.nextObject() as? URL { s += Int64((try? f.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0) }
+                return total + s
             }
+            return total + Int64(v?.fileSize ?? 0)
         }
-        .frame(height: 5)
+    }
+
+    static func format(_ bytes: Int64) -> String { ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file) }
+
+    /// "2.1 MB → 740 KB  −65%"
+    static func delta(from a: Int64, to b: Int64) -> String {
+        guard a > 0, b > 0 else { return b > 0 ? format(b) : "" }
+        let pct = Int(((Double(b) - Double(a)) / Double(a) * 100).rounded())
+        let sign = pct > 0 ? "+" : (pct < 0 ? "−" : "±")
+        return "\(format(a)) → \(format(b))  \(sign)\(abs(pct))%"
     }
 }

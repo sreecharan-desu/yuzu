@@ -11,6 +11,7 @@ enum Prefs {
         static let lossyQuality = "convert.lossyQuality"
         static let compressQuality = "tools.compressQuality"
         static let preserveMetadata = "convert.preserveMetadata"
+        static let hudPlacement = "hud.placement"
     }
 
     static let d = UserDefaults.standard
@@ -22,10 +23,11 @@ enum Prefs {
             Key.actionsCombo: ModifierCombo.control.rawValue,
             Key.sound: true,
             Key.haptics: true,
-            Key.reveal: true,
+            Key.reveal: false,
             Key.lossyQuality: 0.85,
             Key.compressQuality: 0.6,
             Key.preserveMetadata: true,
+            Key.hudPlacement: "nearPointer",
         ])
     }
 
