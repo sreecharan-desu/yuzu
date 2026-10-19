@@ -1,0 +1,51 @@
+name: Yuzu
+options:
+  bundleIdPrefix: com.sreecharan
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "3"
+    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGN_STYLE: Manual
+    DEVELOPMENT_TEAM: ""
+    ENABLE_HARDENED_RUNTIME: YES
+    MACOSX_DEPLOYMENT_TARGET: "26.0"
+    ARCHS: arm64
+    ONLY_ACTIVE_ARCH: YES
+    DEAD_CODE_STRIPPING: YES
+targets:
+  Yuzu:
+    type: application
+    platform: macOS
+    sources:
+      - path: Yuzu
+        excludes:
+          - "Info.plist"
+    info:
+      path: Yuzu/Info.plist
+      properties:
+        CFBundleDisplayName: Yuzu
+        CFBundleName: Yuzu
+        CFBundleIconFile: AppIcon
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        LSUIElement: true
+        NSPrincipalClass: NSApplication
+        LSApplicationCategoryType: public.app-category.utilities
+        NSHumanReadableCopyright: "Yuzu. A personal build for Sreecharan. All processing stays on this Mac."
+        NSDesktopFolderUsageDescription: "Yuzu saves converted copies next to the files you drop, including on your Desktop."
+        NSDocumentsFolderUsageDescription: "Yuzu saves converted copies next to the files you drop in Documents."
+        NSDownloadsFolderUsageDescription: "Yuzu saves converted copies next to the files you drop in Downloads."
+        NSAppleEventsUsageDescription: "Yuzu asks Pages, Keynote and Numbers to export documents locally."
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.sreecharan.yuzu
+        PRODUCT_NAME: Yuzu
+        GENERATE_INFOPLIST_FILE: NO
+        ENABLE_APP_SANDBOX: NO
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""

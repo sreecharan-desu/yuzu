@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)"
+          xcodebuild -version
+
+      - name: Install build tools
+        run: brew install xcodegen create-dmg
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+
+      - name: Build
+        run: scripts/build.sh
+
+      - name: Make disk image
+        run: scripts/make-dmg.sh dist/Yuzu.dmg
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: Yuzu-${{ github.sha }}
+          path: |
+            dist/Yuzu.dmg
+            dist/Yuzu.dmg.sha256
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: Yuzu-${{ github.sha }}
+          path: dist
+
+      - name: Release notes from the changelog
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '
+            $0 ~ "^## \\[" v "\\]" { on = 1; next }
+            on && /^## \[/ { exit }
+            on && /^\[.*\]: / { exit }
+            on { print }
+          ' CHANGELOG.md > notes.md
+          cat notes.md
+
+      - name: Create or update the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "Release exists; leaving its published assets in place."
+          else
+            gh release create "$GITHUB_REF_NAME" dist/Yuzu.dmg dist/Yuzu.dmg.sha256 \
+              --title "Yuzu ${GITHUB_REF_NAME#v}" --notes-file notes.md
+          fi

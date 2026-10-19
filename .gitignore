@@ -1,0 +1,15 @@
+# Generated
+Yuzu.xcodeproj/
+build/
+dist/
+*.xcuserstate
+xcuserdata/
+DerivedData/
+
+# Generated test fixtures and local captures
+TestFiles/
+shots/
+
+# macOS
+.DS_Store
+._*
