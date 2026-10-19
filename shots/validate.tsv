@@ -1,0 +1,211 @@
+source	option	job	valid	seconds	detail
+bundle-tar.tar	file.extract	OK	PASS	0.018	4 items
+bundle-tar.tar	file.zip	OK	PASS	0.014	5 entries
+bundle-tar.tar	file.tgz	OK	PASS	0.016	5 entries
+bundle-tgz.tar.gz	file.extract	OK	PASS	0.007	4 items
+bundle-tgz.tar.gz	file.zip	OK	PASS	0.015	5 entries
+bundle-tgz.tar.gz	file.tar	OK	PASS	0.019	5 entries
+bundle-zip.zip	file.extract	OK	PASS	0.018	4 items
+bundle-zip.zip	file.tar	OK	PASS	0.022	5 entries
+bundle-zip.zip	file.tgz	OK	PASS	0.023	5 entries
+clip-avi.avi	file.mp4	OK	PASS	0.612	h264|video,aac|audio 3.03s
+clip-avi.avi	file.mov	OK	PASS	0.646	h264|video,aac|audio 3.03s
+clip-avi.avi	file.mkv	OK	PASS	0.624	h264|video,aac|audio 3.05s
+clip-avi.avi	file.webm	OK	PASS	1.429	vp9|video,opus|audio 3.04s
+clip-avi.avi	file.wmv	OK	PASS	0.259	wmv2|video,wmav2|audio 3.12s
+clip-avi.avi	file.gif	OK	PASS	0.945	640x360 36 frames
+clip-avi.avi	file.mp3	OK	PASS	0.107	mp3|audio 3.03s
+clip-avi.avi	file.m4a	OK	PASS	0.252	aac|audio 3.03s
+clip-mkv.mkv	file.mp4	OK	PASS	0.369	h264|video,aac|audio 3.00s
+clip-mkv.mkv	file.mov	OK	PASS	0.475	h264|video,aac|audio 3.00s
+clip-mkv.mkv	file.webm	OK	PASS	1.610	vp9|video,opus|audio 3.01s
+clip-mkv.mkv	file.avi	OK	PASS	0.192	mpeg4|video,mp3|audio 3.03s
+clip-mkv.mkv	file.wmv	OK	PASS	0.241	wmv2|video,wmav2|audio 3.09s
+clip-mkv.mkv	file.gif	OK	PASS	0.951	640x360 36 frames
+clip-mkv.mkv	file.mp3	OK	PASS	0.108	mp3|audio 3.00s
+clip-mkv.mkv	file.m4a	OK	PASS	0.255	aac|audio 3.00s
+clip-mov.mov	file.mp4	OK	PASS	0.043	aac|audio,h264|video 3.00s
+clip-mov.mov	file.mkv	OK	PASS	0.297	h264|video,aac|audio 3.04s
+clip-mov.mov	file.webm	OK	PASS	1.105	vp9|video,opus|audio 3.03s
+clip-mov.mov	file.avi	OK	PASS	0.109	mpeg4|video,mp3|audio 3.06s
+clip-mov.mov	file.wmv	OK	PASS	0.154	wmv2|video,wmav2|audio 3.09s
+clip-mov.mov	file.gif	OK	PASS	0.806	640x360 36 frames
+clip-mov.mov	file.mp3	OK	PASS	0.062	mp3|audio 3.02s
+clip-mov.mov	file.m4a	OK	PASS	0.009	aac|audio 3.02s
+clip-webm.webm	file.mp4	OK	PASS	0.352	h264|video,aac|audio 3.00s
+clip-webm.webm	file.mov	OK	PASS	0.370	h264|video,aac|audio 3.00s
+clip-webm.webm	file.mkv	OK	PASS	0.442	h264|video,aac|audio 3.02s
+clip-webm.webm	file.avi	OK	PASS	0.214	mpeg4|video,mp3|audio 3.03s
+clip-webm.webm	file.wmv	OK	PASS	0.202	wmv2|video,wmav2|audio 3.09s
+clip-webm.webm	file.gif	OK	PASS	0.810	640x360 36 frames
+clip-webm.webm	file.mp3	OK	PASS	0.110	mp3|audio 3.00s
+clip-webm.webm	file.m4a	OK	PASS	0.261	aac|audio 3.00s
+clip.mp4	file.mov	OK	PASS	0.015	aac|audio,h264|video 3.00s
+clip.mp4	file.mkv	OK	PASS	0.297	h264|video,aac|audio 3.04s
+clip.mp4	file.webm	OK	PASS	0.934	vp9|video,opus|audio 3.03s
+clip.mp4	file.avi	OK	PASS	0.122	mpeg4|video,mp3|audio 3.06s
+clip.mp4	file.wmv	OK	PASS	0.164	wmv2|video,wmav2|audio 3.09s
+clip.mp4	file.gif	OK	PASS	0.808	640x360 36 frames
+clip.mp4	file.mp3	OK	PASS	0.062	mp3|audio 3.02s
+clip.mp4	file.m4a	OK	PASS	0.009	aac|audio 3.02s
+deck-odp.odp	file.pdf	OK	PASS	2.962	4 pages, 8282 chars, 52 KB
+deck-odp.odp	file.pngPages	OK	PASS	2.135	4 images, first 2550x3300
+deck-odp.odp	file.jpgPages	OK	PASS	1.955	4 images, first 2550x3300
+deck-odp.odp	file.pptx	OK	PASS	1.828	4 slides
+deck-pptx.pptx	file.pdf	OK	PASS	1.726	4 pages, 8282 chars, 70 KB
+deck-pptx.pptx	file.pngPages	OK	PASS	2.154	4 images, first 2550x3300
+deck-pptx.pptx	file.jpgPages	OK	PASS	1.899	4 images, first 2550x3300
+deck-pptx.pptx	file.odp	OK	PASS	2.098	8 zip entries
+doc-doc.doc	file.docx	OK	PASS	1.584	10 zip entries
+doc-doc.doc	file.pdf	OK	PASS	1.515	1 pages, 366 chars, 44 KB
+doc-doc.doc	file.md	OK	PASS	0.014	14 lines
+doc-doc.doc	file.txt	OK	PASS	0.001	373 chars
+doc-doc.doc	file.html	OK	PASS	0.003	1451 chars
+doc-doc.doc	file.epub	OK	PASS	0.018	6 entries
+doc-doc.doc	file.rtf	OK	PASS	0.005	1289 bytes
+doc-doc.doc	file.odt	OK	PASS	0.002	5 zip entries
+doc-docx.docx	file.pdf	OK	PASS	1.605	1 pages, 366 chars, 43 KB
+doc-docx.docx	file.md	OK	PASS	0.006	14 lines
+doc-docx.docx	file.txt	OK	PASS	0.003	373 chars
+doc-docx.docx	file.html	OK	PASS	0.004	1452 chars
+doc-docx.docx	file.epub	OK	PASS	0.016	6 entries
+doc-docx.docx	file.rtf	OK	PASS	0.003	1701 bytes
+doc-docx.docx	file.odt	OK	PASS	0.003	5 zip entries
+doc-epub.epub	file.docx	OK	PASS	0.633	8 zip entries
+doc-epub.epub	file.pdf	OK	PASS	0.143	1 pages, 93 chars, 21 KB
+doc-epub.epub	file.md	OK	PASS	0.016	4 lines
+doc-epub.epub	file.txt	OK	PASS	0.015	95 chars
+doc-epub.epub	file.html	OK	PASS	0.016	1097 chars
+doc-epub.epub	file.rtf	OK	PASS	0.015	800 bytes
+doc-epub.epub	file.odt	OK	PASS	0.016	5 zip entries
+doc-html.html	file.docx	OK	PASS	0.014	8 zip entries
+doc-html.html	file.pdf	OK	PASS	0.012	1 pages, 366 chars, 41 KB
+doc-html.html	file.md	OK	PASS	0.010	14 lines
+doc-html.html	file.txt	OK	PASS	0.007	373 chars
+doc-html.html	file.epub	OK	PASS	0.021	6 entries
+doc-html.html	file.rtf	OK	PASS	0.011	2871 bytes
+doc-html.html	file.odt	OK	PASS	0.008	5 zip entries
+doc-md.md	file.docx	OK	PASS	0.017	8 zip entries
+doc-md.md	file.pdf	OK	PASS	0.016	1 pages, 270 chars, 38 KB
+doc-md.md	file.txt	OK	PASS	0.014	276 chars
+doc-md.md	file.html	OK	PASS	0.013	1382 chars
+doc-md.md	file.epub	OK	PASS	0.024	6 entries
+doc-md.md	file.rtf	OK	PASS	0.012	2650 bytes
+doc-md.md	file.odt	OK	PASS	0.014	5 zip entries
+doc-odt.odt	file.docx	OK	PASS	0.004	8 zip entries
+doc-odt.odt	file.pdf	OK	PASS	1.586	1 pages, 366 chars, 45 KB
+doc-odt.odt	file.md	OK	PASS	0.006	14 lines
+doc-odt.odt	file.txt	OK	PASS	0.003	373 chars
+doc-odt.odt	file.html	OK	PASS	0.005	1490 chars
+doc-odt.odt	file.epub	OK	PASS	0.018	6 entries
+doc-odt.odt	file.rtf	OK	PASS	0.003	2865 bytes
+doc-rtf.rtf	file.docx	OK	PASS	0.002	8 zip entries
+doc-rtf.rtf	file.pdf	OK	PASS	1.466	1 pages, 366 chars, 45 KB
+doc-rtf.rtf	file.md	OK	PASS	0.003	14 lines
+doc-rtf.rtf	file.txt	OK	PASS	0.001	355 chars
+doc-rtf.rtf	file.html	OK	PASS	0.002	1490 chars
+doc-rtf.rtf	file.epub	OK	PASS	0.014	6 entries
+doc-rtf.rtf	file.odt	OK	PASS	0.002	5 zip entries
+doc-txt.txt	file.docx	OK	PASS	0.005	8 zip entries
+doc-txt.txt	file.pdf	OK	PASS	0.004	1 pages, 108 chars, 6 KB
+doc-txt.txt	file.md	OK	PASS	0.001	3 lines
+doc-txt.txt	file.html	OK	PASS	0.001	1066 chars
+doc-txt.txt	file.epub	OK	PASS	0.012	6 entries
+doc-txt.txt	file.rtf	OK	PASS	0.001	427 bytes
+doc-txt.txt	file.odt	OK	PASS	0.001	5 zip entries
+icon-png.png	convert.jpeg	OK	PASS	0.024	1024x1024
+icon-png.png	convert.heic	OK	PASS	0.092	1024x1024
+icon-png.png	convert.webp	OK	PASS	0.321	1024x1024
+icon-png.png	convert.pdf	OK	PASS	0.044	1 pages, 0 chars, 365 KB
+icon-png.png	convert.tiff	OK	PASS	0.016	1024x1024
+icon-png.png	convert.avif	OK	PASS	0.094	1024x1024
+icon-png.png	convert.gif	OK	PASS	0.036	1024x1024
+icon-png.png	convert.bmp	OK	PASS	0.018	1024x1024
+photo-heic.heic	convert.jpeg	OK	PASS	0.742	6016x6016
+photo-heic.heic	convert.png	OK	PASS	3.311	6016x6016
+photo-heic.heic	convert.webp	OK	PASS	5.673	6016x6016
+photo-heic.heic	convert.pdf	OK	PASS	0.273	1 pages, 0 chars, 5778 KB
+photo-heic.heic	convert.tiff	OK	PASS	0.173	6016x6016
+photo-heic.heic	convert.avif	OK	PASS	1.897	6016x6016
+photo-heic.heic	convert.gif	OK	PASS	1.214	6016x6016
+photo-heic.heic	convert.bmp	OK	PASS	0.431	6016x6016
+report-pdf.pdf	file.docx	OK	PASS	0.246	8 zip entries
+report-pdf.pdf	file.pptx	OK	PASS	1.741	4 slides
+report-pdf.pdf	file.xlsx	OK	PASS	1.377	10 zip entries
+report-pdf.pdf	file.jpgPages	OK	PASS	0.174	4 images, first 2550x3300
+report-pdf.pdf	file.pngPages	OK	PASS	0.411	4 images, first 2550x3300
+report-pdf.pdf	file.epub	OK	PASS	0.085	6 entries
+report-pdf.pdf	file.txt	OK	PASS	0.058	8282 chars
+report-pdf.pdf	file.md	OK	PASS	0.072	61 lines
+sample folder	file.zip	OK	PASS	0.007	5 entries
+sample folder	file.tar	OK	PASS	0.008	5 entries
+sample folder	file.tgz	OK	PASS	0.008	5 entries
+subs-srt.srt	file.vtt	OK	PASS	0.001	2 cues
+subs-srt.srt	file.txt	OK	PASS	0.001	44 chars
+subs-vtt.vtt	file.srt	OK	PASS	0.001	2 cues
+subs-vtt.vtt	file.txt	OK	PASS	0.001	29 chars
+table-csv.csv	file.xlsx	OK	PASS	1.266	10 zip entries
+table-csv.csv	file.tsv	OK	PASS	0.001	5 lines
+table-csv.csv	file.ods	OK	PASS	1.550	9 zip entries
+table-csv.csv	file.pdf	OK	PASS	1.290	1 pages, 121 chars, 20 KB
+table-ods.ods	file.xlsx	OK	PASS	1.414	10 zip entries
+table-ods.ods	file.csv	OK	PASS	1.375	5 lines
+table-ods.ods	file.tsv	OK	PASS	1.367	5 lines
+table-ods.ods	file.pdf	OK	PASS	1.387	1 pages, 124 chars, 20 KB
+table-tsv.tsv	file.xlsx	OK	PASS	1.266	10 zip entries
+table-tsv.tsv	file.csv	OK	PASS	0.001	3 lines
+table-tsv.tsv	file.ods	OK	PASS	1.496	9 zip entries
+table-tsv.tsv	file.pdf	OK	PASS	1.288	1 pages, 65 chars, 18 KB
+table-xlsx.xlsx	file.csv	OK	PASS	1.346	5 lines
+table-xlsx.xlsx	file.tsv	OK	PASS	1.393	5 lines
+table-xlsx.xlsx	file.ods	OK	PASS	1.653	9 zip entries
+table-xlsx.xlsx	file.pdf	OK	PASS	1.392	1 pages, 124 chars, 40 KB
+tone-aiff.aiff	file.mp3	OK	PASS	0.072	mp3|audio 3.00s
+tone-aiff.aiff	file.m4a	OK	PASS	0.044	aac|audio 3.07s
+tone-aiff.aiff	file.wav	OK	PASS	0.050	pcm_s16le|audio 3.00s
+tone-aiff.aiff	file.flac	OK	PASS	0.054	flac|audio 3.00s
+tone-aiff.aiff	file.ogg	OK	PASS	0.069	vorbis|audio 3.00s
+tone-aiff.aiff	file.opus	OK	PASS	0.066	opus|audio 3.01s
+tone-aiff.aiff	file.wma	OK	PASS	0.052	wmav2|audio 3.00s
+tone-flac.flac	file.mp3	OK	PASS	0.063	mp3|audio 3.00s
+tone-flac.flac	file.m4a	OK	PASS	0.023	aac|audio 3.09s
+tone-flac.flac	file.wav	OK	PASS	0.051	pcm_s16le|audio 3.00s
+tone-flac.flac	file.ogg	OK	PASS	0.069	vorbis|audio 3.00s
+tone-flac.flac	file.opus	OK	PASS	0.066	opus|audio 3.01s
+tone-flac.flac	file.aiff	OK	PASS	0.050	pcm_s16be|audio 3.00s
+tone-flac.flac	file.wma	OK	PASS	0.053	wmav2|audio 3.00s
+tone-m4a.m4a	file.mp3	OK	PASS	0.060	mp3|audio 3.02s
+tone-m4a.m4a	file.wav	OK	PASS	0.051	pcm_s16le|audio 3.02s
+tone-m4a.m4a	file.flac	OK	PASS	0.055	flac|audio 3.02s
+tone-m4a.m4a	file.ogg	OK	PASS	0.071	vorbis|audio 3.02s
+tone-m4a.m4a	file.opus	OK	PASS	0.067	opus|audio 3.03s
+tone-m4a.m4a	file.aiff	OK	PASS	0.051	pcm_s16be|audio 3.02s
+tone-m4a.m4a	file.wma	OK	PASS	0.053	wmav2|audio 3.02s
+tone-mp3.mp3	file.m4a	OK	PASS	0.023	aac|audio 3.09s
+tone-mp3.mp3	file.wav	OK	PASS	0.052	pcm_s16le|audio 3.00s
+tone-mp3.mp3	file.flac	OK	PASS	0.054	flac|audio 3.00s
+tone-mp3.mp3	file.ogg	OK	PASS	0.069	vorbis|audio 3.00s
+tone-mp3.mp3	file.opus	OK	PASS	0.066	opus|audio 3.01s
+tone-mp3.mp3	file.aiff	OK	PASS	0.051	pcm_s16be|audio 3.00s
+tone-mp3.mp3	file.wma	OK	PASS	0.053	wmav2|audio 3.00s
+tone-ogg.ogg	file.mp3	OK	PASS	0.072	mp3|audio 3.00s
+tone-ogg.ogg	file.m4a	OK	PASS	0.038	aac|audio 3.07s
+tone-ogg.ogg	file.wav	OK	PASS	0.052	pcm_s16le|audio 3.00s
+tone-ogg.ogg	file.flac	OK	PASS	0.057	flac|audio 3.00s
+tone-ogg.ogg	file.opus	OK	PASS	0.082	opus|audio 3.01s
+tone-ogg.ogg	file.aiff	OK	PASS	0.052	pcm_s16be|audio 3.00s
+tone-ogg.ogg	file.wma	OK	PASS	0.057	wmav2|audio 3.00s
+tone-opus.opus	file.mp3	OK	PASS	0.061	mp3|audio 3.00s
+tone-opus.opus	file.m4a	OK	PASS	0.040	aac|audio 3.05s
+tone-opus.opus	file.wav	OK	PASS	0.053	pcm_s16le|audio 3.00s
+tone-opus.opus	file.flac	OK	PASS	0.055	flac|audio 3.00s
+tone-opus.opus	file.ogg	OK	PASS	0.075	vorbis|audio 3.00s
+tone-opus.opus	file.aiff	OK	PASS	0.054	pcm_s16be|audio 3.00s
+tone-opus.opus	file.wma	OK	PASS	0.054	wmav2|audio 3.00s
+tone-wav.wav	file.mp3	OK	PASS	0.079	mp3|audio 3.00s
+tone-wav.wav	file.m4a	OK	PASS	0.018	aac|audio 3.07s
+tone-wav.wav	file.flac	OK	PASS	0.072	flac|audio 3.00s
+tone-wav.wav	file.ogg	OK	PASS	0.087	vorbis|audio 3.00s
+tone-wav.wav	file.opus	OK	PASS	0.084	opus|audio 3.01s
+tone-wav.wav	file.aiff	OK	PASS	0.068	pcm_s16be|audio 3.00s
+tone-wav.wav	file.wma	OK	PASS	0.071	wmav2|audio 3.00s
