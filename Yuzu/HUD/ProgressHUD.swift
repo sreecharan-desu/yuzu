@@ -76,7 +76,7 @@ final class HUDController {
         p.orderFrontRegardless()
     }
 
-    private var spring: Animation { model.reduceMotion ? .easeOut(duration: 0.15) : .spring(response: 0.38, dampingFraction: 0.78) }
+    private var spring: Animation { model.reduceMotion ? .easeOut(duration: 0.15) : Theme.Motion.house(0.6) }
 
     private func show(near point: NSPoint?) {
         hideWork?.cancel()
@@ -151,7 +151,7 @@ final class HUDController {
 
     func hide() {
         hideWork?.cancel()
-        withAnimation(model.reduceMotion ? .easeIn(duration: 0.12) : .spring(response: 0.3, dampingFraction: 0.9)) { model.visible = false }
+        withAnimation(model.reduceMotion ? .easeIn(duration: 0.12) : Theme.Motion.house(0.3)) { model.visible = false }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
             guard let self, !self.model.visible else { return }
             self.panel?.orderOut(nil)
@@ -180,55 +180,57 @@ private struct HUDView: View {
 
     var body: some View {
         pill
-            .scaleEffect(model.visible ? 1 : (model.reduceMotion ? 1 : 0.86))
-            .offset(y: model.visible ? 0 : (model.reduceMotion ? 0 : 10))
+            .scaleEffect(model.visible ? 1 : (model.reduceMotion ? 1 : 0.96))
+            .offset(y: model.visible ? 0 : (model.reduceMotion ? 0 : 12))
+            .blur(radius: model.visible || model.reduceMotion ? 0 : 8)
             .opacity(model.visible ? 1 : 0)
             .frame(width: 520, height: 96)
     }
 
     private var tint: Color {
         switch model.state {
-        case .failure: return Color(red: 0.96, green: 0.42, blue: 0.20)
-        default: return Theme.accentDeep
+        case .failure: return Theme.danger
+        default: return Theme.ink
         }
     }
 
     private var pill: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Theme.Space.s + 2) {
             leading
             Text(model.title)
-                .font(.system(size: 13.5, weight: .semibold))
+                .font(.system(size: 13, weight: .medium)).tracking(-0.15)
+                .foregroundStyle(Theme.ink)
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .contentTransition(.opacity)
             if !model.detail.isEmpty {
                 Text(model.detail)
-                    .font(.system(size: 12, weight: .medium).monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12, weight: .regular).monospacedDigit())
+                    .foregroundStyle(Theme.inkSoft)
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .contentTransition(.numericText())
             }
             if model.state == .working && model.fraction > 0.005 && model.detail.isEmpty {
                 Text("\(Int(model.fraction * 100))%")
-                    .font(.system(size: 12, weight: .medium).monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12, weight: .regular).monospacedDigit())
+                    .foregroundStyle(Theme.inkSoft)
                     .contentTransition(.numericText())
             }
             if model.state == .working {
                 Button(action: onCancel) {
-                    Image(systemName: "xmark").font(.system(size: 9.5, weight: .bold))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 18, height: 18)
-                        .background(Circle().fill(Color.primary.opacity(0.08)))
+                    Image(systemName: "xmark").font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(Theme.inkSoft)
+                        .frame(width: 20, height: 20)
+                        .background(Circle().fill(Theme.ink.opacity(0.07)))
                 }
                 .buttonStyle(.plain)
                 .help("Cancel")
                 .transition(.opacity.combined(with: .scale))
             }
         }
-        .padding(.leading, 12)
-        .padding(.trailing, 16)
+        .padding(.leading, Theme.Space.m - 4)
+        .padding(.trailing, Theme.Space.m)
         .frame(height: 40)
         .frame(maxWidth: 480)
         .fixedSize(horizontal: true, vertical: false)
@@ -236,24 +238,23 @@ private struct HUDView: View {
         .contentShape(Capsule())
         .onTapGesture(perform: onTap)
         .help(model.fullError)
-        .animation(.spring(response: 0.32, dampingFraction: 0.82), value: model.state)
-        .animation(.spring(response: 0.32, dampingFraction: 0.82), value: model.title)
+        .animation(Theme.Motion.house(0.5), value: model.state)
+        .animation(Theme.Motion.house(0.5), value: model.title)
     }
 
     @ViewBuilder private var leading: some View {
         ZStack {
             if model.state == .working {
-                Circle().stroke(Color.primary.opacity(0.14), lineWidth: 2.5)
+                Circle().stroke(Theme.ink.opacity(0.10), lineWidth: 2)
                 Circle().trim(from: 0, to: max(0.04, model.fraction))
-                    .stroke(LinearGradient(colors: [Theme.accent, Theme.accentDeep], startPoint: .top, endPoint: .bottom),
-                            style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                    .stroke(Theme.ink, style: StrokeStyle(lineWidth: 2, lineCap: .round))
                     .rotationEffect(.degrees(-90))
             } else {
                 Image(systemName: model.symbol)
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.system(size: 18, weight: .regular))
                     .symbolRenderingMode(.palette)
-                    .foregroundStyle(.white, tint)
-                    .transition(.scale(scale: 0.4).combined(with: .opacity))
+                    .foregroundStyle(Theme.onInk, tint)
+                    .transition(.opacity.combined(with: .scale(scale: 0.8)))
             }
         }
         .frame(width: 20, height: 20)
@@ -263,13 +264,14 @@ private struct HUDView: View {
         if model.reduceTransparency {
             Capsule()
                 .fill(Color(nsColor: .windowBackgroundColor))
-                .overlay(Capsule().strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5))
-                .shadow(color: .black.opacity(scheme == .dark ? 0.5 : 0.16), radius: 14, y: 6)
+                .overlay(Capsule().strokeBorder(Theme.line, lineWidth: 1))
+                .shadow(Theme.Shadows.float)
         } else {
             Capsule()
                 .fill(Color.clear)
                 .glassEffect(.regular, in: Capsule())
-                .shadow(color: .black.opacity(scheme == .dark ? 0.35 : 0.12), radius: 16, y: 6)
+                .overlay(Capsule().strokeBorder(Theme.line, lineWidth: 1))
+                .shadow(Theme.Shadows.float)
         }
     }
 }

@@ -24,17 +24,17 @@ struct AddBackgroundPanel: View {
     enum Mode: String { case photo = "Photo", screenshot = "Screenshot" }
     enum SubjectState { case finding, found, none }
 
+    /// Neutral solids only; colour comes from the image or the Match backdrop.
     static let solids: [RGBA] = [
-        RGBA(r: 1, g: 1, b: 1), RGBA(r: 0.96, g: 0.94, b: 0.89), RGBA(r: 0.11, g: 0.11, b: 0.12),
-        RGBA(r: 0.99, g: 0.73, b: 0.20), RGBA(r: 0.30, g: 0.62, b: 0.47), RGBA(r: 0.33, g: 0.55, b: 0.95),
+        RGBA(r: 1.000, g: 1.000, b: 1.000), RGBA(r: 0.961, g: 0.961, b: 0.969), RGBA(r: 0.937, g: 0.922, b: 0.894),
+        RGBA(r: 0.824, g: 0.824, b: 0.843), RGBA(r: 0.173, g: 0.173, b: 0.180), RGBA(r: 0.114, g: 0.114, b: 0.122),
     ]
+    /// Gentle two-stop washes, each within a few lightness steps (no saturated pairs).
     static let gradients: [(RGBA, RGBA)] = [
-        (RGBA(r: 1.0, g: 0.82, b: 0.30), RGBA(r: 0.98, g: 0.45, b: 0.18)),
-        (RGBA(r: 0.55, g: 0.85, b: 0.62), RGBA(r: 0.10, g: 0.42, b: 0.33)),
-        (RGBA(r: 0.62, g: 0.78, b: 1.00), RGBA(r: 0.36, g: 0.32, b: 0.88)),
-        (RGBA(r: 1.00, g: 0.70, b: 0.78), RGBA(r: 0.67, g: 0.36, b: 0.92)),
-        (RGBA(r: 0.98, g: 0.93, b: 0.80), RGBA(r: 0.85, g: 0.73, b: 0.55)),
-        (RGBA(r: 0.24, g: 0.25, b: 0.30), RGBA(r: 0.05, g: 0.05, b: 0.07)),
+        (RGBA(r: 1.000, g: 1.000, b: 1.000), RGBA(r: 0.910, g: 0.910, b: 0.925)),
+        (RGBA(r: 0.969, g: 0.957, b: 0.937), RGBA(r: 0.886, g: 0.863, b: 0.824)),
+        (RGBA(r: 0.949, g: 0.957, b: 0.969), RGBA(r: 0.851, g: 0.875, b: 0.906)),
+        (RGBA(r: 0.227, g: 0.227, b: 0.239), RGBA(r: 0.078, g: 0.078, b: 0.082)),
     ]
     struct RatioPreset { let key: String; let value: Double?; let caption: String }
     static let ratios: [RatioPreset] = [
@@ -46,13 +46,15 @@ struct AddBackgroundPanel: View {
     var body: some View {
         ToolScaffold(env: env, subtitle: subtitle, primary: mode == .screenshot ? "Save PNG" : "Save with Background",
                      primaryEnabled: frameImage != nil, onPrimary: save) {
-            ImageStage(image: rendered ?? frameImage, padding: 26) { _ in EmptyView() }
+            ImageStage(image: rendered ?? frameImage, padding: Theme.Space.l) { _ in EmptyView() }
                 .overlay(alignment: .topLeading) {
                     if mode == .photo && subjectState == .finding && style.liftSubject {
-                        Label("Finding the subject…", systemImage: "sparkles")
-                            .font(.system(size: 11, weight: .medium))
-                            .padding(.horizontal, 10).padding(.vertical, 5)
-                            .background(Capsule().fill(.ultraThinMaterial)).padding(12)
+                        Text("Finding the subject…")
+                            .type(.caption).foregroundStyle(Theme.inkSoft)
+                            .padding(.horizontal, Theme.Space.m - 4).frame(height: 24)
+                            .glassEffect(.regular, in: Capsule())
+                            .padding(Theme.Space.m)
+                            .materialize(0, rise: 6, blur: 6)
                     }
                 }
         } controls: {
@@ -62,9 +64,9 @@ struct AddBackgroundPanel: View {
 
             if mode == .photo {
                 Toggle(isOn: $style.liftSubject) {
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("Remove background").font(.system(size: 12, weight: .medium))
-                        Text(subjectNote).font(.system(size: 10.5)).foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Remove background").type(.callout).fontWeight(.medium).foregroundStyle(Theme.ink)
+                        Text(subjectNote).type(.caption).foregroundStyle(Theme.inkSoft)
                     }
                 }
                 .toggleStyle(AccentSwitchStyle())
@@ -72,40 +74,39 @@ struct AddBackgroundPanel: View {
 
             SectionLabel("Backdrops")
             ScrollView {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 10) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Theme.Space.s), count: 4), spacing: Theme.Space.s) {
                     ForEach(Backdrop.allCases) { b in backdropTile(b) }
                 }
-                .padding(4)
+                .padding(Theme.Space.half)
             }
-            .frame(height: 150)
-            .background(RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(0.03)))
+            .frame(height: 128)
 
             if isBackdrop { SliderRow(label: "Grain", value: $style.grain, range: 0...1, neutral: 0.5, display: { "\(Int($0 * 100))%" }) }
 
             SectionLabel("Colours and images")
-            LazyVGrid(columns: Array(repeating: GridItem(.fixed(25), spacing: 5), count: 8), alignment: .leading, spacing: 6) {
-                swatch(.none) { Checker().clipShape(RoundedRectangle(cornerRadius: 6)) }
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(24), spacing: Theme.Space.s), count: 7), alignment: .leading, spacing: Theme.Space.s) {
+                swatch(.none) { Checker().clipShape(Circle()) }
                 swatch(.blur) {
                     ZStack {
                         if let p = preview.cgImage { Image(decorative: p, scale: 1).resizable().scaledToFill().blur(radius: 4) }
-                        Image(systemName: "drop.halffull").font(.system(size: 11, weight: .semibold)).foregroundStyle(.white).shadow(radius: 2)
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .clipShape(Circle())
                 }
-                ForEach(Self.solids, id: \.self) { c in swatch(.solid(c)) { RoundedRectangle(cornerRadius: 6).fill(c.color) } }
+                ForEach(Self.solids, id: \.self) { c in swatch(.solid(c)) { Circle().fill(c.color) } }
                 ForEach(0..<Self.gradients.count, id: \.self) { i in
                     let g = Self.gradients[i]
                     swatch(.gradient(g.0, g.1)) {
-                        RoundedRectangle(cornerRadius: 6).fill(LinearGradient(colors: [g.0.color, g.1.color], startPoint: .topLeading, endPoint: .bottomTrailing))
+                        Circle().fill(LinearGradient(colors: [g.0.color, g.1.color], startPoint: .top, endPoint: .bottom))
                     }
                 }
                 Button(action: chooseImage) {
                     ZStack {
                         if let custom { Image(decorative: custom, scale: 1).resizable().scaledToFill() }
-                        else { Color.primary.opacity(0.07); Image(systemName: "photo.badge.plus").font(.system(size: 12)) }
+                        else { Theme.step200; Image(systemName: "plus").font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.inkSoft) }
                     }
-                    .frame(width: 25, height: 25).clipShape(RoundedRectangle(cornerRadius: 6))
-                    .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(Theme.accentDeep, lineWidth: isCustom ? 2 : 0).padding(-3))
+                    .frame(width: 24, height: 24).clipShape(Circle())
+                    .overlay(Circle().strokeBorder(Theme.line, lineWidth: 1))
+                    .overlay(Circle().strokeBorder(Theme.ink, lineWidth: isCustom ? 1.5 : 0).padding(-3))
                 }
                 .buttonStyle(.plain).help("Use your own image")
             }
@@ -119,9 +120,9 @@ struct AddBackgroundPanel: View {
                       display: { $0 == 0 ? "Off" : "\(Int(($0 / 0.12 * 100).rounded()))%" })
             if mode == .screenshot {
                 Toggle(isOn: $style.border) {
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("Inset border").font(.system(size: 12, weight: .medium))
-                        Text("A hairline edge, like a real window").font(.system(size: 10.5)).foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Inset border").type(.callout).fontWeight(.medium).foregroundStyle(Theme.ink)
+                        Text("A hairline edge, like a real window").type(.caption).foregroundStyle(Theme.inkSoft)
                     }
                 }
                 .toggleStyle(AccentSwitchStyle())
@@ -130,7 +131,7 @@ struct AddBackgroundPanel: View {
             if mode == .photo { ratioSection }
             if let out = rendered {
                 Text("\(outputSize(out)) · preview \(String(format: "%.0f", lastRenderMS)) ms")
-                    .font(.system(size: 10.5).monospacedDigit()).foregroundStyle(.secondary)
+                    .font(.system(size: 11).monospacedDigit()).foregroundStyle(Theme.inkMute)
             }
         }
         .onAppear(perform: start)
@@ -143,25 +144,28 @@ struct AddBackgroundPanel: View {
 
     @ViewBuilder private var ratioSection: some View {
         SectionLabel("Ratio")
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 5), count: 3), spacing: 5) {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: Theme.Space.s), count: 3), spacing: Theme.Space.s) {
             ForEach(Self.ratios, id: \.key) { r in ratioChip(r) }
         }
     }
 
     private func backdropTile(_ b: Backdrop) -> some View {
         let selected = style.fill == .backdrop(b)
-        return Button { withAnimation(.snappy) { style.fill = .backdrop(b) } } label: {
-            VStack(spacing: 4) {
-                ZStack {
-                    if let t = thumbs[b] { Image(decorative: t, scale: 2).resizable().scaledToFill() } else { Color.primary.opacity(0.06) }
-                    if b == .match { Image(systemName: "eyedropper.halffull").font(.system(size: 12, weight: .semibold)).foregroundStyle(.white).shadow(radius: 2) }
-                }
-                .frame(height: 44).frame(maxWidth: .infinity)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5))
-                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Theme.accentDeep, lineWidth: selected ? 2 : 0).padding(-3))
-                Text(b.name).font(.system(size: 10, weight: selected ? .semibold : .regular)).lineLimit(1)
-                    .foregroundStyle(selected ? Theme.accentDeep : .secondary)
+        return Button { withAnimation(Theme.Motion.house(0.3)) { style.fill = .backdrop(b) } } label: {
+            VStack(spacing: Theme.Space.half + 2) {
+                Color.clear
+                    .frame(minWidth: 0, maxWidth: .infinity).frame(height: 40)
+                    .overlay {
+                        if let t = thumbs[b] { Image(decorative: t, scale: 2).resizable().scaledToFill() } else { Theme.step200 }
+                    }
+                    .overlay {
+                        if b == .match { Image(systemName: "eyedropper").font(.system(size: 11, weight: .regular)).foregroundStyle(Theme.inkSoft) }
+                    }
+                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous).strokeBorder(Theme.line, lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: Theme.Radius.control + 3, style: .continuous).strokeBorder(Theme.ink, lineWidth: selected ? 1.5 : 0).padding(-3))
+                Text(b.name).font(.system(size: 10, weight: selected ? .medium : .regular)).lineLimit(1)
+                    .foregroundStyle(selected ? Theme.ink : Theme.inkSoft)
             }
         }
         .buttonStyle(.plain)
@@ -170,14 +174,15 @@ struct AddBackgroundPanel: View {
 
     private func ratioChip(_ r: RatioPreset) -> some View {
         let selected = style.ratio == r.value
-        return Button { withAnimation(.snappy) { style.ratio = r.value } } label: {
+        return Button { withAnimation(Theme.Motion.house(0.3)) { style.ratio = r.value } } label: {
             VStack(spacing: 0) {
-                Text(r.key).font(.system(size: 11, weight: .semibold))
-                Text(r.caption).font(.system(size: 9)).opacity(0.75)
+                Text(r.key).font(.system(size: 11, weight: .medium)).tracking(-0.05)
+                Text(r.caption).font(.system(size: 9)).opacity(0.7)
             }
-            .frame(maxWidth: .infinity).padding(.vertical, 4)
-            .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(selected ? Theme.accentDeep : Color.primary.opacity(0.07)))
-            .foregroundStyle(selected ? Color.white : Color.primary)
+            .frame(maxWidth: .infinity).frame(height: 40)
+            .background(RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous).fill(selected ? Theme.ink : Theme.step200))
+            .overlay(RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous).strokeBorder(selected ? Color.clear : Theme.line, lineWidth: 1))
+            .foregroundStyle(selected ? Theme.onInk : Theme.ink)
         }
         .buttonStyle(.plain)
     }
@@ -185,7 +190,7 @@ struct AddBackgroundPanel: View {
     private func swatch<V: View>(_ fill: BGFill, @ViewBuilder content: () -> V) -> some View {
         let selected = style.fill == fill
         return Button {
-            withAnimation(.snappy) {
+            withAnimation(Theme.Motion.house(0.3)) {
                 // A plain cut-out should keep the photo's own size unless padding was changed on purpose.
                 if fill == .none, mode == .photo, style.padding == BGStyle().padding { style.padding = 0 }
                 if fill == .none, mode == .photo, style.shadow == BGStyle().shadow { style.shadow = 0 }
@@ -193,9 +198,9 @@ struct AddBackgroundPanel: View {
             }
         } label: {
             content()
-                .frame(width: 25, height: 25)
-                .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color.primary.opacity(0.15), lineWidth: 0.5))
-                .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(Theme.accentDeep, lineWidth: selected ? 2 : 0).padding(-3))
+                .frame(width: 24, height: 24)
+                .overlay(Circle().strokeBorder(Theme.line, lineWidth: 1))
+                .overlay(Circle().strokeBorder(Theme.ink, lineWidth: selected ? 1.5 : 0).padding(-3))
         }
         .buttonStyle(.plain)
     }
@@ -349,7 +354,7 @@ struct AddBackgroundPanel: View {
             style.fill = .solid(Self.solids[min(Int(c.dropFirst(5)) ?? 0, Self.solids.count - 1)])
         default: break
         }
-        if let b = info["backdrop"].flatMap(Backdrop.init(rawValue:)) { style.fill = .backdrop(b) }
+        if let b = info["backdrop"].flatMap(Backdrop.named) { style.fill = .backdrop(b) }
         if let r = info["ratio"] { style.ratio = Self.ratios.first { $0.key == r }?.value }
         if let v = info["border"] { style.border = v == "1" }
     }
@@ -367,19 +372,19 @@ enum BGMemory {
     }
 }
 
-/// A switch drawn in Yuzu's accent colour (the system switch ignores tint on macOS).
+/// A quiet ink switch (the system switch ignores tint on macOS).
 struct AccentSwitchStyle: ToggleStyle {
     func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Theme.Space.s) {
             configuration.label
-            Spacer(minLength: 8)
+            Spacer(minLength: Theme.Space.s)
             ZStack(alignment: configuration.isOn ? .trailing : .leading) {
-                Capsule().fill(configuration.isOn ? Theme.accentDeep : Color.primary.opacity(0.16))
-                    .overlay(Capsule().strokeBorder(Color.black.opacity(configuration.isOn ? 0 : 0.08), lineWidth: 0.5))
-                Circle().fill(.white).shadow(color: .black.opacity(0.25), radius: 1, y: 0.5).padding(2)
+                Capsule().fill(configuration.isOn ? Theme.ink : Theme.step300)
+                    .overlay(Capsule().strokeBorder(Theme.line, lineWidth: configuration.isOn ? 0 : 1))
+                Circle().fill(configuration.isOn ? Theme.onInk : Color.white).shadow(color: .black.opacity(0.18), radius: 1.5, y: 0.5).padding(2)
             }
-            .frame(width: 34, height: 20)
-            .animation(.snappy(duration: 0.18), value: configuration.isOn)
+            .frame(width: 32, height: 20)
+            .animation(Theme.Motion.house(0.3), value: configuration.isOn)
             .accessibilityElement()
             .accessibilityLabel("Switch")
             .accessibilityAddTraits(.isButton)

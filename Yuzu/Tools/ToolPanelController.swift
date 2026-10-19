@@ -61,7 +61,7 @@ final class ToolPanelController: NSObject, NSWindowDelegate {
         w.collectionBehavior = [.fullScreenAuxiliary, .moveToActiveSpace]
         w.minSize = NSSize(width: 640, height: 440)
         w.isMovableByWindowBackground = false
-        w.backgroundColor = .windowBackgroundColor
+        w.backgroundColor = Theme.nsCanvas
         window = w
         super.init()
         w.delegate = self
@@ -140,51 +140,55 @@ struct ToolScaffold<Stage: View, Controls: View>: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 10) {
+            HStack(spacing: Theme.Space.s + 2) {
                 Image(systemName: env.tool.symbol)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Theme.accentDeep)
-                    .frame(width: 26, height: 26)
-                    .background(Circle().fill(Theme.accent.opacity(0.16)))
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(env.tool == .addBackground ? "Add Background" : env.tool.title).font(.system(size: 13, weight: .semibold))
-                    Text(subtitle ?? fileLine).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+                    .font(.system(size: 13, weight: .regular))
+                    .foregroundStyle(Theme.ink)
+                    .frame(width: 28, height: 28)
+                    .background(Circle().fill(Theme.step100))
+                    .overlay(Circle().strokeBorder(Theme.line, lineWidth: 1))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(env.tool == .addBackground ? "Add background" : env.tool.title).type(.headline).foregroundStyle(Theme.ink)
+                    Text(subtitle ?? fileLine).type(.caption).foregroundStyle(Theme.inkSoft).lineLimit(1).truncationMode(.middle)
                 }
                 Spacer()
             }
-            .padding(.leading, 84)
-            .padding(.trailing, 16)
-            .frame(height: 52)
+            .padding(.leading, 80)
+            .padding(.trailing, Theme.Space.m)
+            .frame(height: 56)
+            .materialize(0, rise: 6, blur: 6)
 
             HStack(spacing: 0) {
                 stage()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(StageBackground())
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .padding(.leading, 14).padding(.bottom, 14).padding(.trailing, 4)
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous).strokeBorder(Theme.line, lineWidth: 1))
+                    .padding(.leading, Theme.Space.m).padding(.bottom, Theme.Space.s).padding(.trailing, Theme.Space.half)
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 16) { controls() }
-                        .padding(.horizontal, 16).padding(.vertical, 4)
+                    VStack(alignment: .leading, spacing: Theme.Space.m) { controls() }
+                        .padding(.horizontal, Theme.Space.m).padding(.vertical, Theme.Space.half)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .materialize(1, rise: 10, blur: 8)
                 }
+                .scrollIndicators(.never)
                 .frame(width: 272)
             }
 
             HStack {
                 if env.urls.count > 1 {
-                    Text("Applies to all \(env.urls.count) files").font(.system(size: 11)).foregroundStyle(.secondary)
+                    Text("Applies to all \(env.urls.count) files").type(.caption).foregroundStyle(Theme.inkSoft)
+                } else {
+                    TrustLine(lead: "On-device.", rest: "Nothing leaves this Mac.")
                 }
                 Spacer()
-                Button("Cancel") { env.close() }.keyboardShortcut(.cancelAction).controlSize(.large)
+                Button("Cancel") { env.close() }.keyboardShortcut(.cancelAction).buttonStyle(QuietPillButtonStyle())
                 Button(primary, action: onPrimary)
                     .keyboardShortcut(.defaultAction)
-                    .buttonStyle(.borderedProminent)
-                    .tint(Theme.accentDeep)
-                    .controlSize(.large)
+                    .buttonStyle(InkPillButtonStyle())
                     .disabled(!primaryEnabled)
             }
-            .padding(.horizontal, 16).padding(.vertical, 12)
-            .background(.bar)
+            .padding(.horizontal, Theme.Space.m).padding(.vertical, Theme.Space.m)
         }
     }
 
@@ -200,15 +204,15 @@ struct StageBackground: View {
     var body: some View {
         // Soft checkerboard so transparent areas read as transparent.
         Canvas { ctx, size in
-            let s: CGFloat = 10
-            let a = scheme == .dark ? Color.white.opacity(0.035) : Color.black.opacity(0.04)
+            let s: CGFloat = 8
+            let a = scheme == .dark ? Color.white.opacity(0.03) : Color.black.opacity(0.03)
             for y in stride(from: 0, to: size.height, by: s) {
                 for x in stride(from: 0, to: size.width, by: s) where (Int(x / s) + Int(y / s)) % 2 == 0 {
                     ctx.fill(Path(CGRect(x: x, y: y, width: s, height: s)), with: .color(a))
                 }
             }
         }
-        .background(scheme == .dark ? Color.black.opacity(0.28) : Color.black.opacity(0.05))
+        .background(Theme.step100)
     }
 }
 
@@ -216,7 +220,7 @@ struct SectionLabel: View {
     let text: String
     init(_ text: String) { self.text = text }
     var body: some View {
-        Text(text.uppercased()).font(.system(size: 10, weight: .semibold)).tracking(0.6).foregroundStyle(.secondary)
+        Text(text).type(.callout).fontWeight(.medium).foregroundStyle(Theme.ink)
     }
 }
 
@@ -231,20 +235,20 @@ struct SliderRow: View {
     var display: ((Double) -> String)? = nil
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(label).font(.system(size: 12))
+        VStack(alignment: .leading, spacing: Theme.Space.half) {
+            HStack(spacing: Theme.Space.s) {
+                Text(label).type(.callout).foregroundStyle(Theme.ink)
                 Spacer()
-                Text(display?(value) ?? (String(format: format, value) + unit)).font(.system(size: 11).monospacedDigit()).foregroundStyle(.secondary)
-                Button { withAnimation(.snappy) { value = neutral } } label: {
-                    Image(systemName: "arrow.uturn.backward").font(.system(size: 9, weight: .semibold))
+                Text(display?(value) ?? (String(format: format, value) + unit)).font(.system(size: 11).monospacedDigit()).foregroundStyle(Theme.inkMute)
+                Button { withAnimation(Theme.Motion.house(0.4)) { value = neutral } } label: {
+                    Image(systemName: "arrow.uturn.backward").font(.system(size: 9, weight: .medium))
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(value == neutral ? Color.secondary.opacity(0.35) : Theme.accentDeep)
+                .foregroundStyle(value == neutral ? Theme.inkMute.opacity(0.35) : Theme.ink)
                 .disabled(value == neutral)
                 .help("Reset")
             }
-            Slider(value: $value, in: range).controlSize(.small).tint(Theme.accentDeep)
+            Slider(value: $value, in: range).controlSize(.small).tint(Theme.ink)
         }
     }
 }
@@ -254,19 +258,21 @@ struct ChipPicker<T: Hashable>: View {
     let options: [(T, String)]
     @Binding var selection: T
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 2) {
             ForEach(options, id: \.0) { opt in
-                Button { withAnimation(.snappy) { selection = opt.0 } } label: {
-                    Text(opt.1).font(.system(size: 11, weight: .medium))
-                        .padding(.horizontal, 8).padding(.vertical, 5)
-                        .frame(maxWidth: .infinity)
-                        .background(RoundedRectangle(cornerRadius: 7, style: .continuous)
-                            .fill(selection == opt.0 ? Theme.accentDeep : Color.primary.opacity(0.07)))
-                        .foregroundStyle(selection == opt.0 ? Color.white : Color.primary)
+                Button { withAnimation(Theme.Motion.house(0.4)) { selection = opt.0 } } label: {
+                    Text(opt.1).font(.system(size: 12, weight: .medium)).tracking(-0.05)
+                        .frame(maxWidth: .infinity).frame(height: 28)
+                        .background(Capsule().fill(selection == opt.0 ? Theme.ink : Color.clear))
+                        .foregroundStyle(selection == opt.0 ? Theme.onInk : Theme.inkSoft)
+                        .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
             }
         }
+        .padding(2)
+        .background(Capsule().fill(Theme.step200))
+        .overlay(Capsule().strokeBorder(Theme.line, lineWidth: 1))
     }
 }
 
@@ -298,7 +304,7 @@ final class PreviewLoader: ObservableObject {
 /// Shows an image fitted in the stage and gives overlays the fitted rect.
 struct ImageStage<Overlay: View>: View {
     let image: CGImage?
-    var padding: CGFloat = 22
+    var padding: CGFloat = Theme.Space.l
     @ViewBuilder var overlay: (CGRect) -> Overlay
 
     var body: some View {
@@ -310,7 +316,7 @@ struct ImageStage<Overlay: View>: View {
                         .resizable()
                         .interpolation(.high)
                         .frame(width: rect.width, height: rect.height)
-                        .shadow(color: .black.opacity(0.25), radius: 8, y: 3)
+                        .shadow(Theme.Shadows.float)
                         .offset(x: rect.minX, y: rect.minY)
                     overlay(rect)
                 }

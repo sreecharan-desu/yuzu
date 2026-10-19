@@ -325,7 +325,7 @@ struct SplitPanel: View {
                     ForEach(segments, id: \.0) { seg in
                         Text(clock(seg.1 - seg.0)).font(.system(size: 11).monospacedDigit())
                             .padding(.horizontal, 8).padding(.vertical, 4)
-                            .background(Capsule().fill(Theme.accent.opacity(0.16)))
+                            .background(Capsule().fill(Theme.step100))
                     }
                 }
             }
@@ -340,7 +340,7 @@ struct SplitPanel: View {
                     Image(systemName: "scissors").foregroundStyle(Theme.accentDeep)
                     Text(clock(c)).font(.system(size: 12).monospacedDigit())
                     Spacer()
-                    Button { cuts.removeAll { $0 == c } } label: { Image(systemName: "xmark").font(.system(size: 9, weight: .bold)) }
+                    Button { cuts.removeAll { $0 == c } } label: { Image(systemName: "xmark").font(.system(size: 9, weight: .semibold)) }
                         .buttonStyle(.plain).foregroundStyle(.secondary)
                 }
             }
@@ -401,8 +401,8 @@ struct CropVideoPanel: View {
                 ForEach(AspectPreset.allCases) { p in
                     Button { preset = p; withAnimation(.snappy) { rect = CropOverlay.fitted(aspect: p.ratio(original: strip.size), imageSize: strip.size) } } label: {
                         Text(p.rawValue).font(.system(size: 11, weight: .medium)).frame(maxWidth: .infinity).padding(.vertical, 5)
-                            .background(RoundedRectangle(cornerRadius: 7).fill(preset == p ? Theme.accentDeep : Color.primary.opacity(0.07)))
-                            .foregroundStyle(preset == p ? .white : .primary)
+                            .background(RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous).fill(preset == p ? Theme.accentDeep : Theme.step200))
+                            .foregroundStyle(preset == p ? Theme.onInk : Theme.ink)
                     }.buttonStyle(.plain)
                 }
             }
@@ -461,7 +461,7 @@ struct BleepPanel: View {
                 HStack {
                     Text("\(clock(ranges[i].lowerBound)) – \(clock(ranges[i].upperBound))").font(.system(size: 12).monospacedDigit())
                     Spacer()
-                    Button { ranges.remove(at: i) } label: { Image(systemName: "xmark").font(.system(size: 9, weight: .bold)) }
+                    Button { ranges.remove(at: i) } label: { Image(systemName: "xmark").font(.system(size: 9, weight: .semibold)) }
                         .buttonStyle(.plain).foregroundStyle(.secondary)
                 }
             }

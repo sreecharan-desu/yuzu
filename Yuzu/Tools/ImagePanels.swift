@@ -21,8 +21,8 @@ struct CropPanel: View {
                 ForEach(AspectPreset.allCases) { p in
                     Button { preset = p; withAnimation(.snappy) { rect = CropOverlay.fitted(aspect: p.ratio(original: preview.pixelSize), imageSize: preview.pixelSize) } } label: {
                         Text(p.rawValue).font(.system(size: 11, weight: .medium)).frame(maxWidth: .infinity).padding(.vertical, 5)
-                            .background(RoundedRectangle(cornerRadius: 7).fill(preset == p ? Theme.accentDeep : Color.primary.opacity(0.07)))
-                            .foregroundStyle(preset == p ? .white : .primary)
+                            .background(RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous).fill(preset == p ? Theme.accentDeep : Theme.step200))
+                            .foregroundStyle(preset == p ? Theme.onInk : Theme.ink)
                     }.buttonStyle(.plain)
                 }
             }
@@ -159,8 +159,8 @@ struct AnnotatePanel: View {
                             Text(k.rawValue.capitalized).font(.system(size: 10, weight: .medium))
                         }
                         .frame(maxWidth: .infinity).padding(.vertical, 7)
-                        .background(RoundedRectangle(cornerRadius: 8).fill(kind == k ? Theme.accentDeep : Color.primary.opacity(0.07)))
-                        .foregroundStyle(kind == k ? .white : .primary)
+                        .background(RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous).fill(kind == k ? Theme.accentDeep : Theme.step200))
+                        .foregroundStyle(kind == k ? Theme.onInk : Theme.ink)
                     }.buttonStyle(.plain)
                 }
             }
