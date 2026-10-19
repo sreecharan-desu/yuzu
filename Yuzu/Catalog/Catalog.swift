@@ -206,6 +206,7 @@ enum OptionAction: Sendable, Equatable {
     case convertImage(ImageFormat)
     case convertFile(Target)
     case imageTool(ImageTool)
+    case tool(FileTool)
     case fileAction(FileAction)
 }
 
@@ -302,13 +303,10 @@ enum Catalog {
 
         case .tools:
             guard !items.isEmpty else { return ([], "Reading file…") }
-            guard items.allSatisfy(isImage) else {
-                return ([], items.count > 1 ? "No shared tools" : "Tools for this type arrive soon")
-            }
-            let opts = ImageTool.allCases.map {
-                WheelOption(id: "tool.\($0.rawValue)", title: $0.title, symbol: $0.symbol, action: .imageTool($0))
-            }
-            return (opts, nil)
+            let kinds = Set(items.map(FileKind.of))
+            guard kinds.count == 1, let fileKind = kinds.first else { return ([], "No shared tools") }
+            let opts = toolOptions(for: fileKind, count: items.count)
+            return (opts, opts.isEmpty ? "No tools for this type" : nil)
         }
     }
 }

@@ -3,6 +3,8 @@ import os
 
 /// Local developer hooks driven by `scripts/yuzuctl` (distributed notifications on this Mac only).
 /// Used to preview the ring and run conversions for automated screenshots and tests.
+extension Notification.Name { static let yuzuPanelSet = Notification.Name("yuzu.panelSet") }
+
 @MainActor
 final class DebugHooks {
     static let name = Notification.Name("com.sreecharan.yuzu.debug")
@@ -123,6 +125,39 @@ final class DebugHooks {
                 wheel.handleTap(kind: .convert, items: items, at: NSPoint(x: f.midX, y: f.midY))
             }
             step(0)
+        case "toolpanel":
+            // Opens a tool panel behind other windows (no focus change) for screenshots; writes its window number.
+            guard let t = FileTool(rawValue: info["tool"] ?? ""), let files = info["files"] else { return }
+            let urls = files.split(separator: "|").map { URL(fileURLWithPath: String($0)) }
+            if let a = info["appearance"] { NSApp.appearance = NSAppearance(named: a == "light" ? .aqua : .darkAqua) }
+            ToolPanelController.closeAll()
+            ToolPanelController.show(t, urls: urls, background: info["front"] != "1")
+            try? "\(ToolPanelController.lastWindowNumber)".write(toFile: NSTemporaryDirectory() + "yuzu-window.txt", atomically: true, encoding: .utf8)
+        case "closePanels":
+            ToolPanelController.closeAll()
+            NSApp.appearance = nil
+        case "panelSet":
+            // Drives panel state for screenshots: key=value pairs are posted to the open panel.
+            NotificationCenter.default.post(name: .yuzuPanelSet, object: nil, userInfo: info)
+        case "addbg":
+            // Headless Add Background run with a given style (same code path as the panel's Save).
+            guard let file = info["file"] else { return }
+            var st = BGStyle()
+            st.liftSubject = info["lift"] != "0"
+            switch info["fill"] ?? "gradient" {
+            case "none": st.fill = .none; st.padding = 0; st.shadow = 0
+            case "blur": st.fill = .blur
+            case "solid": st.fill = .solid(RGBA(r: 0.96, g: 0.94, b: 0.89))
+            case "image": st.fill = .image(URL(fileURLWithPath: info["bg"] ?? ""))
+            default: break
+            }
+            if let r = info["ratio"], let v = Double(r) { st.ratio = v }
+            let src = URL(fileURLWithPath: file)
+            JobRunner.execute(label: "Adding background", units: [[src]], near: .zero, reveal: false, quiet: true,
+                              work: { u, ctx in try ImageEdit.addBackground(u[0], style: st, ctx: ctx) }) { r in
+                let report = (r.outputs.map { "OK \($0.path) \(String(format: "%.2f", r.seconds))s" } + r.errors.map { "ERR \($0)" }).joined(separator: "\n")
+                try? report.write(toFile: NSTemporaryDirectory() + "yuzu-last-job.txt", atomically: true, encoding: .utf8)
+            }
         case "toast":
             let hud = HUDController.shared
             let f = NSScreen.main?.frame ?? .zero

@@ -89,6 +89,7 @@ enum ImageEngine {
                 throw YuzuError.writeFailed(dest.lastPathComponent)
             }
             var p = properties
+            p[kCGImagePropertyHasAlpha] = nil   // read-side hint only; never let it strip alpha on write
             if let q = quality, format.isLossy { p[kCGImageDestinationLossyCompressionQuality] = q }
             CGImageDestinationAddImage(d, img, p as CFDictionary)
             guard CGImageDestinationFinalize(d) else {
@@ -110,7 +111,7 @@ enum ImageEngine {
     }
 
     /// Opaque photos are embedded as JPEG (DCT) so PDFs stay small; images with alpha stay lossless.
-    private static func jpegBacked(_ image: CGImage) -> CGImage {
+    static func jpegBacked(_ image: CGImage) -> CGImage {
         let data = NSMutableData()
         guard let d = CGImageDestinationCreateWithData(data, UTType.jpeg.identifier as CFString, 1, nil) else { return image }
         CGImageDestinationAddImage(d, image, [kCGImageDestinationLossyCompressionQuality: 0.9] as CFDictionary)

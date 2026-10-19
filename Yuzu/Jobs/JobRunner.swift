@@ -20,6 +20,7 @@ enum JobRunner {
         case .convertImage(let f): return "Converting to \(f.title)"
         case .convertFile(let t): return t == .extract ? "Extracting" : "Converting to \(t.title)"
         case .imageTool(let t): return "\(t.title)…"
+        case .tool(let t): return "\(t.title)…"
         case .fileAction(let a): return a.title
         }
     }
@@ -27,37 +28,59 @@ enum JobRunner {
     static func run(_ option: WheelOption, urls: [URL], near point: NSPoint, reveal: Bool? = nil, quiet: Bool = false,
                     completion: ((Outcome) -> Void)? = nil) {
         guard !urls.isEmpty else { return }
-        let work: @Sendable (URL, JobContext) throws -> URL
+        let label = title(for: option)
         switch option.action {
         case .fileAction(let a):
             FileActions.perform(a, urls: urls, near: point)
             completion?(Outcome())
-            return
         case .convertImage(let f):
-            work = { url, ctx in try ImageEngine.convert(url, to: f, settings: ctx.settings) }
+            execute(label: label, units: urls.map { [$0] }, near: point, reveal: reveal, quiet: quiet,
+                    work: { u, ctx in try ImageEngine.convert(u[0], to: f, settings: ctx.settings) }, completion: completion)
         case .imageTool(let t):
-            work = { url, ctx in try ImageEngine.apply(t, to: url, settings: ctx.settings) }
+            execute(label: label, units: urls.map { [$0] }, near: point, reveal: reveal, quiet: quiet,
+                    work: { u, ctx in try ImageEngine.apply(t, to: u[0], settings: ctx.settings) }, completion: completion)
         case .convertFile(let t):
-            work = { url, ctx in try Conversions.perform(t, source: url, ctx: ctx) }
+            execute(label: label, units: urls.map { [$0] }, near: point, reveal: reveal, quiet: quiet,
+                    work: { u, ctx in try Conversions.perform(t, source: u[0], ctx: ctx) }, completion: completion)
+        case .tool(let t):
+            if t.needsPanel && !quiet {
+                ToolPanelController.show(t, urls: urls)
+                completion?(Outcome())
+                return
+            }
+            if t == .readQR {
+                QRReader.run(urls: urls, near: point, quiet: quiet, completion: completion)
+                return
+            }
+            let units = t.combinesFiles ? [urls.sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }]
+                                        : urls.map { [$0] }
+            execute(label: label, units: units, near: point, reveal: reveal, quiet: quiet,
+                    work: { u, ctx in try ToolEngine.oneShot(t, inputs: u, ctx: ctx) }, completion: completion)
         }
+    }
 
+    /// Runs `work` once per unit (a unit is one file, or all files for combining tools) off the main thread,
+    /// with live progress, cancel and a result toast.
+    static func execute(label: String, units: [[URL]], near point: NSPoint, reveal: Bool? = nil, quiet: Bool = false,
+                        work: @escaping @Sendable ([URL], JobContext) throws -> URL,
+                        completion: ((Outcome) -> Void)? = nil) {
+        let urls = units.flatMap { $0 }
         let ctx = JobContext(settings: ImageSettings(quality: Prefs.lossyQuality, compressQuality: Prefs.compressQuality,
                                                      preserveMetadata: Prefs.preserveMetadata))
         current = ctx
         let shouldReveal = reveal ?? Prefs.reveal
         let hud = HUDController.shared
-        let label = title(for: option)
         if !quiet {
             hud.onCancel = { ctx.cancel() }
-            hud.begin(title: urls.count == 1 ? label : "\(label) · \(urls.count) files", near: point)
+            hud.begin(title: units.count == 1 ? label : "\(label) · \(units.count) files", near: point)
         }
-        let total = Double(urls.count)
+        let total = Double(units.count)
         let started = Date()
 
         Task.detached(priority: .userInitiated) {
             var outcome = Outcome()
             let counter = ProgressCounter()
-            for (i, url) in urls.enumerated() {
+            for (i, unit) in units.enumerated() {
                 if ctx.isCancelled { break }
                 ctx.onProgress = { f in
                     counter.bump()
@@ -66,12 +89,12 @@ enum JobRunner {
                     Task { @MainActor in if !quiet { hud.progress(overall) } }
                 }
                 do {
-                    outcome.outputs.append(try work(url, ctx))
+                    outcome.outputs.append(try work(unit, ctx))
                 } catch YuzuError.cancelled {
                     outcome.errors.append("Cancelled")
                     break
                 } catch {
-                    outcome.errors.append("\(url.lastPathComponent): \(error.localizedDescription)")
+                    outcome.errors.append("\(unit[0].lastPathComponent): \(error.localizedDescription)")
                 }
                 let done = Double(i + 1) / total
                 Task { @MainActor in if !quiet { hud.progress(done) } }
