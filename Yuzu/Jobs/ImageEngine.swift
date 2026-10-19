@@ -19,7 +19,12 @@ enum ImageEngine {
     static func decode(_ url: URL, maxPixel: Int? = nil) throws -> Decoded {
         guard let src = CGImageSourceCreateWithURL(url as CFURL, [kCGImageSourceShouldCache: false] as CFDictionary),
               CGImageSourceGetCount(src) > 0 else { throw YuzuError.unreadable(url.lastPathComponent) }
-        let props = (CGImageSourceCopyPropertiesAtIndex(src, 0, nil) as? [CFString: Any]) ?? [:]
+        var props = (CGImageSourceCopyPropertiesAtIndex(src, 0, nil) as? [CFString: Any]) ?? [:]
+        if props[kCGImagePropertyHasAlpha] == nil,
+           let full = CGImageSourceCreateImageAtIndex(src, 0, [kCGImageSourceShouldCache: false] as CFDictionary) {
+            // Thumbnails come back premultiplied even for opaque sources, so record the source's real alpha.
+            props[kCGImagePropertyHasAlpha] = hasAlpha(full)
+        }
         let w = props[kCGImagePropertyPixelWidth] as? Int ?? 0
         let h = props[kCGImagePropertyPixelHeight] as? Int ?? 0
         let opts: [CFString: Any] = [
@@ -37,6 +42,8 @@ enum ImageEngine {
     /// Metadata to carry into the new file, with orientation reset because pixels are already upright.
     static func carriedProperties(_ props: [CFString: Any], keep: Bool) -> [CFString: Any] {
         var out: [CFString: Any] = [:]
+        // Read-only hint used by the PDF writer to know the source is opaque (ignored by ImageIO on write).
+        if let a = props[kCGImagePropertyHasAlpha] { out[kCGImagePropertyHasAlpha] = a }
         if keep {
             for key in [kCGImagePropertyExifDictionary, kCGImagePropertyGPSDictionary, kCGImagePropertyIPTCDictionary,
                         kCGImagePropertyTIFFDictionary, kCGImagePropertyDPIWidth, kCGImagePropertyDPIHeight] {
@@ -96,14 +103,14 @@ enum ImageEngine {
         var box = CGRect(x: 0, y: 0, width: Double(image.width) * 72 / dpi, height: Double(image.height) * 72 / dpi)
         guard let ctx = CGContext(dest as CFURL, mediaBox: &box, nil) else { throw YuzuError.writeFailed(dest.lastPathComponent) }
         ctx.beginPDFPage(nil)
-        ctx.draw(pdfEmbeddable(image), in: box)
+        let opaque = !hasAlpha(image) || (properties[kCGImagePropertyHasAlpha] as? Bool) == false
+        ctx.draw(opaque ? jpegBacked(image) : image, in: box)
         ctx.endPDFPage()
         ctx.closePDF()
     }
 
     /// Opaque photos are embedded as JPEG (DCT) so PDFs stay small; images with alpha stay lossless.
-    private static func pdfEmbeddable(_ image: CGImage) -> CGImage {
-        guard !hasAlpha(image) else { return image }
+    private static func jpegBacked(_ image: CGImage) -> CGImage {
         let data = NSMutableData()
         guard let d = CGImageDestinationCreateWithData(data, UTType.jpeg.identifier as CFString, 1, nil) else { return image }
         CGImageDestinationAddImage(d, image, [kCGImageDestinationLossyCompressionQuality: 0.9] as CFDictionary)
