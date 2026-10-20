@@ -39,7 +39,7 @@ result is saved next to the original. nothing is uploaded anywhere.
   viewer and editor, read QR codes, make PDF, merge, split and organize PDF pages, trim, speed,
   split, mute, join, bleep, normalize, channels, crop video, and compress video, audio and PDF.
 - **actions.** AirDrop, float, copy, copy path, move, open in terminal.
-- **float.** A shelf for files. drop files on it, drag them out to any app, and park it on a screen
+- **float.** a shelf for files. drop files on it, drag them out to any app, and park it on a screen
   edge as a small glass tab that opens on hover.
 - **fast.** the ring is on screen within the first display refresh after the key tap (median 8.8 ms
   on an M1 MacBook air), multi-file jobs run in parallel, and image conversions use ImageIO directly.
