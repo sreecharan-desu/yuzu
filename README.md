@@ -41,9 +41,9 @@ result is saved next to the original. nothing is uploaded anywhere.
 - **actions.** AirDrop, float, copy, copy path, move, open in terminal.
 - **float.** a shelf for files. drop files on it, drag them out to any app, and park it on a screen
   edge as a small glass tab that opens on hover.
-- **fast.** the ring is on screen within the first display refresh after the key tap (median 8.8 ms
-  on an M1 MacBook air), multi-file jobs run in parallel, and image conversions use ImageIO directly.
-- **light.** about 0.1% CPU and 75 MB of memory when idle.
+- **fast.** in a local benchmark on an M1 MacBook Air the ring was on screen within the first display
+  refresh after the key tap (median 8.8 ms; raw output not committed yet), multi-file jobs run in parallel, and image conversions use ImageIO directly.
+- **light.** about 0.1% CPU and 75 MB of memory when idle on the same machine.
 
 <p align="center">
   <img src="docs/screenshots/ring-tools-light.jpg" width="49%" alt="tools ring in light mode">
