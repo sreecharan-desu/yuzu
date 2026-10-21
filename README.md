@@ -157,3 +157,7 @@ bug reports, ideas and pull requests are welcome. see [CONTRIBUTING.md](CONTRIBU
 ## license
 
 [MIT](LICENSE)
+
+---
+
+built by [sreecharan desu](https://www.sreecharandesu.in) · [more projects](https://www.sreecharandesu.in/work)
