@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/sreecharan-desu/yuzu/releases/latest"><img alt="download" src="https://img.shields.io/github/v/release/sreecharan-desu/yuzu?label=download&color=1d1d1f"></a>
+  <a href="https://github.com/sreecharan-desu/yuzu/releases/latest/download/Yuzu.dmg"><img alt="download" src="https://img.shields.io/github/v/release/sreecharan-desu/yuzu?label=download&color=1d1d1f"></a>
   <a href="https://github.com/sreecharan-desu/yuzu/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/sreecharan-desu/yuzu/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="macOS 26+" src="https://img.shields.io/badge/macOS-26%2B-black">
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-blue"></a>
@@ -56,7 +56,7 @@ result is saved next to the original. nothing is uploaded anywhere.
 
 ## install
 
-1. download **Yuzu.dmg** from the [latest release](https://github.com/sreecharan-desu/yuzu/releases/latest).
+1. [download **Yuzu.dmg**](https://github.com/sreecharan-desu/yuzu/releases/latest/download/Yuzu.dmg).
 2. open it and drag **yuzu** into **applications**.
 
 <p align="center"><img src="docs/screenshots/dmg-window.png" width="62%" alt="the yuzu disk image window: drag yuzu to applications"></p>
