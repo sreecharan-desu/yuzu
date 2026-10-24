@@ -212,7 +212,7 @@ enum FileActions {
             guard let s = NSSharingService(named: .sendViaAirDrop), s.canPerform(withItems: urls) else {
                 hud.failure("AirDrop is unavailable", detail: "", near: point); return
             }
-            NSApp.activate()
+            AppActivation.bringForward()
             s.perform(withItems: urls)
         case .copy:
             let pb = NSPasteboard.general
@@ -225,7 +225,7 @@ enum FileActions {
             pb.setString(urls.map(\.path).joined(separator: "\n"), forType: .string)
             hud.info(one ? "Path copied" : "\(urls.count) paths copied", symbol: "link.circle.fill", near: point)
         case .move:
-            NSApp.activate()
+            AppActivation.bringForward()
             let panel = NSOpenPanel()
             panel.canChooseDirectories = true
             panel.canChooseFiles = false

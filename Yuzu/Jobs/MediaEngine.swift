@@ -117,8 +117,17 @@ enum MediaEngine {
         session.shouldOptimizeForNetworkUse = fileType == .mp4
         nonisolated(unsafe) let s = session
         let progress = Task.detached {
-            for await state in s.states(updateInterval: 0.15) {
-                if case .exporting(let p) = state { ctx.report(p.fractionCompleted) }
+            if #available(macOS 15, *) {
+                for await state in s.states(updateInterval: 0.15) {
+                    if case .exporting(let p) = state { ctx.report(p.fractionCompleted) }
+                }
+            } else {
+                while !Task.isCancelled {
+                    let fraction = s.progress
+                    if fraction.isFinite, fraction >= 0 { ctx.report(Double(fraction)) }
+                    if s.status != .waiting, s.status != .exporting { break }
+                    try? await Task.sleep(nanoseconds: 150_000_000)
+                }
             }
         }
         defer { progress.cancel() }

@@ -21,7 +21,7 @@ final class WelcomeController {
             w.ignoresMouseEvents = false
             w.level = .normal
             w.center()
-            NSApp.activate()
+            AppActivation.bringForward()
             w.makeKeyAndOrderFront(nil)
         }
     }

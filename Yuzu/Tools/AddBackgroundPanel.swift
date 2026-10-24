@@ -52,7 +52,7 @@ struct AddBackgroundPanel: View {
                         Text("Finding the subject…")
                             .type(.caption).foregroundStyle(Theme.inkSoft)
                             .padding(.horizontal, Theme.Space.m - 4).frame(height: 24)
-                            .glassEffect(.regular, in: Capsule())
+                            .yuzuGlass(in: Capsule())
                             .padding(Theme.Space.m)
                             .materialize(0, rise: 6, blur: 6)
                     }
@@ -63,13 +63,17 @@ struct AddBackgroundPanel: View {
             if mode == .screenshot { ratioSection }   // sharing sizes first: the usual first choice for screenshots
 
             if mode == .photo {
-                Toggle(isOn: $style.liftSubject) {
+                Toggle(isOn: Binding(
+                    get: { ImageEdit.canLiftSubject && style.liftSubject },
+                    set: { if ImageEdit.canLiftSubject { style.liftSubject = $0 } }
+                )) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Remove background").type(.callout).fontWeight(.medium).foregroundStyle(Theme.ink)
                         Text(subjectNote).type(.caption).foregroundStyle(Theme.inkSoft)
                     }
                 }
                 .toggleStyle(AccentSwitchStyle())
+                .disabled(!ImageEdit.canLiftSubject)
             }
 
             SectionLabel("Backdrops")
@@ -135,8 +139,8 @@ struct AddBackgroundPanel: View {
             }
         }
         .onAppear(perform: start)
-        .onChange(of: preview.cgImage) { _, img in prepare(img) }
-        .onChange(of: style) { _, s in render(); if ready { BGMemory.save(s, for: mode) } }
+        .whenChange(of: preview.cgImage) { img in prepare(img) }
+        .whenChange(of: style) { s in render(); if ready { BGMemory.save(s, for: mode) } }
         .onReceive(NotificationCenter.default.publisher(for: .yuzuPanelSet)) { note in applyTestSetting((note.userInfo as? [String: String]) ?? [:]) }
     }
 
@@ -238,6 +242,7 @@ struct AddBackgroundPanel: View {
     }
 
     private var subjectNote: String {
+        if !ImageEdit.canLiftSubject { return "Requires macOS 14 or later." }
         switch subjectState {
         case .finding: return "Finding the subject…"
         case .found: return "Subject found with Apple Vision"
@@ -311,6 +316,11 @@ struct AddBackgroundPanel: View {
     }
 
     private func findSubject(_ img: CGImage) {
+        guard ImageEdit.canLiftSubject else {
+            style.liftSubject = false
+            subjectState = .none
+            return
+        }
         subjectState = .finding
         Task.detached(priority: .userInitiated) {
             let s = try? ImageEdit.liftSubject(img)

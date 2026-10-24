@@ -49,7 +49,7 @@ private struct WheelContent: View {
                     Circle()
                         .fill(scheme == .dark ? Color(hex: 0x1D1D1F, opacity: 0.30) : Color.white.opacity(0.30))
                         .frame(width: Theme.wheelDiameter, height: Theme.wheelDiameter)
-                        .glassEffect(.regular, in: Circle())
+                        .yuzuGlass(in: Circle())
                 }
             }
                 .shadow(Theme.Shadows.float)
@@ -158,7 +158,7 @@ private struct HubView: View {
                 Circle()
                     .fill(scheme == .dark ? Color(hex: 0x1D1D1F, opacity: 0.4) : Color.white.opacity(0.4))
                     .frame(width: d, height: d)
-                    .glassEffect(.regular, in: Circle())
+                    .yuzuGlass(in: Circle())
             }
             VStack(spacing: Theme.Space.s) {
                 if let img = model.thumbnail {
@@ -178,7 +178,7 @@ private struct HubView: View {
                     .padding(.horizontal, Theme.Space.s)
                     .frame(height: 20)
                     .background(Capsule().fill(Theme.ink.opacity(0.06)))
-                    .contentTransition(.opacity)
+                    .yuzuOpacityTransition()
                     .animation(Theme.Motion.color, value: caption)
             }
             .frame(width: d - Theme.Space.m)
@@ -209,7 +209,7 @@ private struct ModeChip: View {
         .foregroundStyle(Theme.inkSoft)
         .padding(.horizontal, Theme.Space.m - 4)
         .frame(height: 24)
-        .glassEffect(.regular, in: Capsule())
+        .yuzuGlass(in: Capsule())
         .overlay(Capsule().strokeBorder(Theme.line, lineWidth: 1))
         .opacity(isOpen ? 1 : 0)
         .offset(y: isOpen ? 0 : 8)

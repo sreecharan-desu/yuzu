@@ -57,7 +57,7 @@ private struct FloatCard<G: Gesture>: View {
         }
         .frame(width: FloatGeometry.width)
         .frame(maxHeight: .infinity, alignment: .top)
-        .glassEffect(.regular, in: shape)
+        .yuzuGlass(in: shape)
         .overlay(shape.strokeBorder(model.dropTargeted ? Theme.ink.opacity(0.5) : Theme.line, lineWidth: 1))
         .overlay(alignment: .top) {
             // drop target: a single whisper-of-yuzu hairline along the top edge
@@ -77,7 +77,7 @@ private struct FloatCard<G: Gesture>: View {
                 Text("\(model.items.count)")
                     .font(.system(size: 12, weight: .regular)).monospacedDigit()
                     .foregroundStyle(Theme.inkMute)
-                    .contentTransition(.numericText())
+                    .yuzuNumericTransition()
             }
             Spacer(minLength: 0)
             Button { controller.dockNearest() } label: {
@@ -203,11 +203,11 @@ struct FloatTab: View {
             }
         }
         .frame(width: FloatGeometry.tab.width, height: FloatGeometry.tab.height)
-        .glassEffect(.regular, in: shape)
+        .yuzuGlass(in: shape)
         .overlay(shape.strokeBorder(model.dropTargeted ? Theme.ink.opacity(0.5) : Theme.line, lineWidth: 1))
         .contentShape(shape)
         .onAppear(perform: load)
-        .onChange(of: model.items) { _, _ in load() }
+        .whenChange(of: model.items) { _ in load() }
     }
 
     private func load() {

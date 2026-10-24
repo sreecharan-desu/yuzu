@@ -213,7 +213,7 @@ struct TrimPanel: View {
             Button(player.playing ? "Stop" : "Play selection") { player.toggle(from: start, to: end) }
         }
         .onAppear { if let u = env.urls.first { strip.load(u); player.load(u) } }
-        .onChange(of: strip.duration) { _, d in if d > 0, end == 0 { end = d } }
+        .whenChange(of: strip.duration) { d in if d > 0, end == 0 { end = d } }
         .onPanelSet { i in if let a = Double(i["start"] ?? "") { start = a }; if let b = Double(i["end"] ?? "") { end = b } }
         .onDisappear { player.stop() }
     }
@@ -368,11 +368,11 @@ struct SplitPanel: View {
                 }
             }
             .contentShape(Rectangle())
-            .onTapGesture { loc in
-                let t = loc.x / w * strip.duration
+            .gesture(DragGesture(minimumDistance: 0).onEnded { value in
+                let t = value.location.x / w * strip.duration
                 guard t > 0.2, t < strip.duration - 0.2, cuts.allSatisfy({ abs($0 - t) > 0.3 }) else { return }
                 cuts.append(t)
-            }
+            })
         }
     }
 
@@ -399,7 +399,7 @@ struct CropVideoPanel: View {
             SectionLabel("Aspect")
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 64), spacing: 4)], spacing: 4) {
                 ForEach(AspectPreset.allCases) { p in
-                    Button { preset = p; withAnimation(.snappy) { rect = CropOverlay.fitted(aspect: p.ratio(original: strip.size), imageSize: strip.size) } } label: {
+                    Button { preset = p; withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) { rect = CropOverlay.fitted(aspect: p.ratio(original: strip.size), imageSize: strip.size) } } label: {
                         Text(p.rawValue).font(.system(size: 11, weight: .medium)).frame(maxWidth: .infinity).padding(.vertical, 5)
                             .background(RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous).fill(preset == p ? Theme.accentDeep : Theme.step200))
                             .foregroundStyle(preset == p ? Theme.onInk : Theme.ink)
@@ -410,7 +410,7 @@ struct CropVideoPanel: View {
             Text("\(Int(rect.width * strip.size.width)) × \(Int(rect.height * strip.size.height)) px")
                 .font(.system(size: 12).monospacedDigit())
             Text("The crop is even on both axes, so it stays a valid video size.").font(.system(size: 11)).foregroundStyle(.secondary)
-            Button("Reset") { preset = .free; withAnimation(.snappy) { rect = CGRect(x: 0, y: 0, width: 1, height: 1) } }
+            Button("Reset") { preset = .free; withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) { rect = CGRect(x: 0, y: 0, width: 1, height: 1) } }
         }
         .onAppear { if let u = env.urls.first { strip.load(u, count: 1) } }
         .onPanelSet { i in if let p = i["preset"].flatMap(AspectPreset.init(rawValue:)) { preset = p; rect = CropOverlay.fitted(aspect: p.ratio(original: strip.size), imageSize: strip.size) } }

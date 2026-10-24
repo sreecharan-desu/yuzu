@@ -28,7 +28,7 @@ struct CardBackground: ViewModifier {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
         content
             .background {
-                if glass { shape.fill(Color.clear).glassEffect(.regular, in: shape) } else { shape.fill(Theme.step100) }
+                if glass { shape.yuzuGlassFill() } else { shape.fill(Theme.step100) }
             }
             .overlay(shape.strokeBorder(Theme.line, lineWidth: 1))
     }
@@ -199,7 +199,10 @@ extension View {
 struct TrustLine: View {
     let lead: String, rest: String
     var body: some View {
-        Text("\(Text(lead).foregroundStyle(Theme.trust)) \(Text(rest).foregroundStyle(Theme.inkSoft))")
-            .type(.callout)
+        HStack(spacing: 4) {
+            Text(lead).foregroundStyle(Theme.trust)
+            Text(rest).foregroundStyle(Theme.inkSoft)
+        }
+        .type(.callout)
     }
 }

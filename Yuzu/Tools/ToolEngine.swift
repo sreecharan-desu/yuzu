@@ -266,7 +266,12 @@ enum ToolEngine {
         guard let doc = PDFDocument(url: src) else { throw YuzuError.unreadable(src.lastPathComponent) }
         let dest = OutputNamer.destination(for: src, ext: "pdf", suffix: FileTool.compressPDF.suffix)
         ctx.report(0.2)
-        let ok = doc.write(to: dest, withOptions: [.saveImagesAsJPEGOption: true, .optimizeImagesForScreenOption: true])
+        let ok: Bool
+        if #available(macOS 13.4, *) {
+            ok = doc.write(to: dest, withOptions: [.saveImagesAsJPEGOption: true, .optimizeImagesForScreenOption: true])
+        } else {
+            ok = doc.write(to: dest)
+        }
         guard ok else { throw YuzuError.writeFailed(dest.lastPathComponent) }
         if SizeText.of([dest]) >= SizeText.of([src]) {
             try? FileManager.default.removeItem(at: dest)

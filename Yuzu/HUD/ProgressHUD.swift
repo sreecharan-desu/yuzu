@@ -202,20 +202,20 @@ private struct HUDView: View {
                 .foregroundStyle(Theme.ink)
                 .lineLimit(1)
                 .truncationMode(.middle)
-                .contentTransition(.opacity)
+                .yuzuOpacityTransition()
             if !model.detail.isEmpty {
                 Text(model.detail)
                     .font(.system(size: 12, weight: .regular).monospacedDigit())
                     .foregroundStyle(Theme.inkSoft)
                     .lineLimit(1)
                     .truncationMode(.tail)
-                    .contentTransition(.numericText())
+                    .yuzuNumericTransition()
             }
             if model.state == .working && model.fraction > 0.005 && model.detail.isEmpty {
                 Text("\(Int(model.fraction * 100))%")
                     .font(.system(size: 12, weight: .regular).monospacedDigit())
                     .foregroundStyle(Theme.inkSoft)
-                    .contentTransition(.numericText())
+                    .yuzuNumericTransition()
             }
             if model.state == .working {
                 Button(action: onCancel) {
@@ -269,7 +269,7 @@ private struct HUDView: View {
         } else {
             Capsule()
                 .fill(Color.clear)
-                .glassEffect(.regular, in: Capsule())
+                .yuzuGlass(in: Capsule())
                 .overlay(Capsule().strokeBorder(Theme.line, lineWidth: 1))
                 .shadow(Theme.Shadows.float)
         }
