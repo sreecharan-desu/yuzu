@@ -28,6 +28,10 @@ private struct GeneralPane: View {
                 Toggle("Launch Yuzu at login", isOn: Binding(
                     get: { login.isEnabled },
                     set: { login.setEnabled($0) }))
+                    .disabled(!LoginItem.isSupported)
+                if !LoginItem.isSupported {
+                    Text("Requires macOS 13 or later.").font(.caption).foregroundStyle(.secondary)
+                }
                 if login.needsApproval {
                     HStack {
                         Text("macOS needs your OK in Login Items.").foregroundStyle(.secondary)
@@ -53,7 +57,7 @@ private struct GeneralPane: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
-        .formStyle(.grouped)
+        .yuzuGroupedForm()
         .onAppear { login.refresh() }
     }
 }
@@ -78,7 +82,7 @@ private struct ShortcutsPane: View {
                 .font(.caption).foregroundStyle(.secondary)
             }
         }
-        .formStyle(.grouped)
+        .yuzuGroupedForm()
     }
 
     private func row(_ kind: WheelKind, _ title: String, _ icon: String) -> some View {
@@ -210,7 +214,7 @@ private struct ConversionPane: View {
                 Toggle("Keep metadata when converting", isOn: $metadata)
             }
         }
-        .formStyle(.grouped)
+        .yuzuGroupedForm()
     }
 }
 

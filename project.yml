@@ -2,21 +2,25 @@ name: Yuzu
 options:
   bundleIdPrefix: com.sreecharan
   deploymentTarget:
-    macOS: "26.0"
+    macOS: "13.0"
   createIntermediateGroups: true
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "1.1.0"
-    CURRENT_PROJECT_VERSION: "4"
+    MARKETING_VERSION: "1.2.0"
+    CURRENT_PROJECT_VERSION: "5"
     CODE_SIGN_IDENTITY: "-"
     CODE_SIGN_STYLE: Manual
     DEVELOPMENT_TEAM: ""
     ENABLE_HARDENED_RUNTIME: YES
-    MACOSX_DEPLOYMENT_TARGET: "26.0"
-    ARCHS: arm64
-    ONLY_ACTIVE_ARCH: YES
+    MACOSX_DEPLOYMENT_TARGET: "13.0"
+    ARCHS: "arm64 x86_64"
     DEAD_CODE_STRIPPING: YES
+  configs:
+    Debug:
+      ONLY_ACTIVE_ARCH: YES
+    Release:
+      ONLY_ACTIVE_ARCH: NO
 targets:
   Yuzu:
     type: application

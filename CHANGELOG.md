@@ -11,6 +11,18 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Collage, video snapshot, export GIF tool, audio visualizer and trim silence.
 - Dragging several Float items out at once, rubber-band selection and Quick Look in Float.
 
+## [1.2.0] - 2026-10-24
+
+One download for Intel and Apple Silicon.
+
+### Added
+- Universal binary (`arm64` and `x86_64`). macOS 13 Ventura or later.
+- On macOS 26 the ring, Float and toasts use Liquid Glass. On earlier supported systems they use the system material, with the same layout.
+
+### Changed
+- Removing a photo's background needs macOS 14. On macOS 13 that switch stays off and says so. Solid, gradient, blur, custom and screenshot backgrounds still work.
+- Launch at login is available on every Mac that can run Yuzu.
+
 ## [1.1.0] - 2026-10-19
 
 A redesign. Same features, a calmer and more consistent look.
@@ -54,6 +66,7 @@ A redesign. Same features, a calmer and more consistent look.
   HEIC to JPEG about 4x faster, WebP about 2x faster.
 - Quick Look thumbnails are cached.
 
-[Unreleased]: https://github.com/sreecharan-desu/yuzu/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/sreecharan-desu/yuzu/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/sreecharan-desu/yuzu/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/sreecharan-desu/yuzu/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/sreecharan-desu/yuzu/releases/tag/v1.0.0

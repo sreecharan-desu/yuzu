@@ -19,7 +19,7 @@ final class SettingsWindowController: NSWindowController {
     required init?(coder: NSCoder) { fatalError() }
 
     func show() {
-        NSApp.activate()
+        AppActivation.bringForward()
         window?.makeKeyAndOrderFront(nil)
     }
 }

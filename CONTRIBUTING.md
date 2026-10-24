@@ -11,7 +11,7 @@ Open an issue with the bug or feature template. For bugs, include your macOS ver
 
 ```sh
 brew install xcodegen create-dmg ffmpeg webp exiftool
-scripts/build.sh            # builds dist/Yuzu.app (Release, ad-hoc signed)
+scripts/build.sh            # universal Release build (Intel and Apple Silicon), macOS 13 deployment target, ad-hoc signed
 open dist/Yuzu.app
 ```
 

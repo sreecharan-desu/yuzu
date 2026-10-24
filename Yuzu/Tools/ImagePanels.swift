@@ -19,7 +19,7 @@ struct CropPanel: View {
             SectionLabel("Aspect")
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 64), spacing: 4)], spacing: 4) {
                 ForEach(AspectPreset.allCases) { p in
-                    Button { preset = p; withAnimation(.snappy) { rect = CropOverlay.fitted(aspect: p.ratio(original: preview.pixelSize), imageSize: preview.pixelSize) } } label: {
+                    Button { preset = p; withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) { rect = CropOverlay.fitted(aspect: p.ratio(original: preview.pixelSize), imageSize: preview.pixelSize) } } label: {
                         Text(p.rawValue).font(.system(size: 11, weight: .medium)).frame(maxWidth: .infinity).padding(.vertical, 5)
                             .background(RoundedRectangle(cornerRadius: Theme.Radius.control, style: .continuous).fill(preset == p ? Theme.accentDeep : Theme.step200))
                             .foregroundStyle(preset == p ? Theme.onInk : Theme.ink)
@@ -36,7 +36,7 @@ struct CropPanel: View {
             if env.urls.count > 1 {
                 Text("The same share of each image is cropped for every image.").font(.system(size: 11)).foregroundStyle(.secondary)
             }
-            Button("Reset") { preset = .free; withAnimation(.snappy) { rect = CGRect(x: 0, y: 0, width: 1, height: 1) } }
+            Button("Reset") { preset = .free; withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) { rect = CGRect(x: 0, y: 0, width: 1, height: 1) } }
         }
         .onAppear { if let u = env.urls.first { preview.load(u) } }
     }
@@ -92,11 +92,11 @@ struct EditPhotoPanel: View {
             SliderRow(label: "Tint", value: $adj.tint, range: -100...100)
             SectionLabel("Detail")
             SliderRow(label: "Sharpness", value: $adj.sharpness, range: 0...100)
-            Button("Reset All") { withAnimation(.snappy) { adj = PhotoAdjustments() } }.disabled(adj.isNeutral)
+            Button("Reset All") { withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) { adj = PhotoAdjustments() } }.disabled(adj.isNeutral)
         }
         .onAppear { if let u = env.urls.first { preview.load(u, maxPixel: 1400) } }
-        .onChange(of: adj) { _, a in render(a) }
-        .onChange(of: preview.cgImage) { _, _ in render(adj) }
+        .whenChange(of: adj) { a in render(a) }
+        .whenChange(of: preview.cgImage) { _ in render(adj) }
     }
 
     private func render(_ a: PhotoAdjustments) {
@@ -269,8 +269,8 @@ struct RedactPanel: View {
             }
         }
         .onAppear { if let u = env.urls.first { preview.load(u) } }
-        .onChange(of: boxes) { _, _ in render() }
-        .onChange(of: mode) { _, _ in render() }
+        .whenChange(of: boxes) { _ in render() }
+        .whenChange(of: mode) { _ in render() }
     }
 
     private func render() {
@@ -317,10 +317,10 @@ struct ResizePanel: View {
             } else {
                 HStack {
                     TextField("Width", text: $width).textFieldStyle(.roundedBorder)
-                        .onChange(of: width) { _, w in syncHeight(w) }
+                        .whenChange(of: width) { w in syncHeight(w) }
                     Text("×").foregroundStyle(.secondary)
                     TextField("Height", text: $height).textFieldStyle(.roundedBorder)
-                        .onChange(of: height) { _, h in syncWidth(h) }
+                        .whenChange(of: height) { h in syncWidth(h) }
                 }
                 Toggle("Keep proportions", isOn: $lock).toggleStyle(.checkbox)
             }
@@ -328,7 +328,7 @@ struct ResizePanel: View {
                 .font(.system(size: 11)).foregroundStyle(.secondary)
         }
         .onAppear { if let u = env.urls.first { preview.load(u, maxPixel: 1400) } }
-        .onChange(of: preview.pixelSize) { _, s in
+        .whenChange(of: preview.pixelSize) { s in
             width = "\(Int(s.width / 2))"; height = "\(Int(s.height / 2))"
         }
     }

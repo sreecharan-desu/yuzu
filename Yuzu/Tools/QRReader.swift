@@ -62,7 +62,7 @@ enum QRReader {
         if background {
             Offscreen.park(w)
         } else {
-            w.center(); NSApp.activate(); w.makeKeyAndOrderFront(nil)
+            w.center(); AppActivation.bringForward(); w.makeKeyAndOrderFront(nil)
         }
         ToolPanelController.lastWindowNumber = w.windowNumber
     }

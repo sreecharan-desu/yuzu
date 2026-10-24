@@ -48,7 +48,8 @@ final class WheelController {
 
     // Latency probe: time from the tap to the first display refresh after the ring is on screen.
     private var openStart: CFTimeInterval = 0
-    private var probe: CADisplayLink?
+    private var probeLink: AnyObject?
+    private var probeTimer: Timer?
     private(set) var latencies: [Double] = []
     var onLatency: ((Double) -> Void)?
     /// Time from the tap to the bloom animation starting (the state flip SwiftUI animates from).
@@ -78,13 +79,27 @@ final class WheelController {
         Feedback.shared.warmUp()
     }
 
+    @available(macOS 14, *)
     @objc private func probeTick(_ link: CADisplayLink) {
-        let ms = (CACurrentMediaTime() - openStart) * 1000
         link.invalidate()
-        probe = nil
+        probeLink = nil
+        finishProbe()
+    }
+
+    private func finishProbe() {
+        let ms = (CACurrentMediaTime() - openStart) * 1000
         latencies.append(ms)
         onLatency?(ms)
         log.notice("ring open latency \(ms, format: .fixed(precision: 2)) ms")
+    }
+
+    private func stopProbe() {
+        probeTimer?.invalidate()
+        probeTimer = nil
+        if #available(macOS 14, *), let link = probeLink as? CADisplayLink {
+            link.invalidate()
+        }
+        probeLink = nil
     }
 
     private func makePanel() -> WheelPanel {
@@ -157,11 +172,16 @@ final class WheelController {
         }
         let t2 = CACurrentMediaTime()
         isShowing = true
-        probe?.invalidate()
-        if let view = panel.contentView {
+        stopProbe()
+        if #available(macOS 14, *), let view = panel.contentView {
             let link = view.displayLink(target: self, selector: #selector(probeTick(_:)))
             link.add(to: .main, forMode: .common)
-            probe = link
+            probeLink = link
+        } else {
+            // macOS 13 has no view display link. One frame later is close enough for the latency probe.
+            probeTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: false) { [weak self] _ in
+                MainActor.assumeIsolated { self?.finishProbe() }
+            }
         }
         // Flip the state in the same main-queue turn as orderFront. The view last rendered closed, so SwiftUI
         // still animates the change, and the first frame the window server composites is already bloom frame one.

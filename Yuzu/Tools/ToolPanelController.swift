@@ -87,7 +87,7 @@ final class ToolPanelController: NSObject, NSWindowDelegate {
             Offscreen.park(window)
         } else {
             window.center()
-            NSApp.activate()
+            AppActivation.bringForward()
             window.makeKeyAndOrderFront(nil)
         }
         Self.lastWindowNumber = window.windowNumber

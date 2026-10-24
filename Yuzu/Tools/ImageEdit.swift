@@ -232,8 +232,16 @@ enum ImageEdit {
 
     // MARK: Add background
 
+    /// Foreground instance masks need macOS 14. Photo mode explains this and stays off on earlier systems.
+    static var canLiftSubject: Bool {
+        if #available(macOS 14, *) { return true }
+        return false
+    }
+
     /// Cuts the main subject out with Vision. Returns the subject on a transparent canvas, same size as `image`.
+    /// Returns nil on macOS 13 and earlier, where the request does not exist.
     static func liftSubject(_ image: CGImage) throws -> CGImage? {
+        guard #available(macOS 14, *) else { return nil }
         let request = VNGenerateForegroundInstanceMaskRequest()
         let handler = VNImageRequestHandler(cgImage: image, options: [:])
         try handler.perform([request])

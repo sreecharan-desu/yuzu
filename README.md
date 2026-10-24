@@ -12,7 +12,8 @@
 <p align="center">
   <a href="https://github.com/sreecharan-desu/yuzu/releases/latest/download/Yuzu.dmg"><img alt="download" src="https://img.shields.io/github/v/release/sreecharan-desu/yuzu?label=download&color=1d1d1f"></a>
   <a href="https://github.com/sreecharan-desu/yuzu/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/sreecharan-desu/yuzu/actions/workflows/ci.yml/badge.svg"></a>
-  <img alt="macOS 26+" src="https://img.shields.io/badge/macOS-26%2B-black">
+  <img alt="macOS 13+" src="https://img.shields.io/badge/macOS-13%2B-black">
+  <img alt="Intel and Apple Silicon" src="https://img.shields.io/badge/Intel%20%26%20Apple%20Silicon-universal-black">
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-blue"></a>
 </p>
 
@@ -20,9 +21,10 @@
   <img src="docs/hero.jpg" width="100%" alt="the convert ring open under the pointer on a quiet desktop, with a saved confirmation below">
 </p>
 
-yuzu is a small, native menu bar app for macOS. while you drag any file, tap a modifier key and a
-ring opens under the pointer with what you can do with that file. drop on an option and the
-result is saved next to the original. nothing is uploaded anywhere.
+yuzu is a small, native menu bar app for macOS 13 and later, on Intel and Apple Silicon.
+while you drag any file, tap a modifier key and a ring opens under the pointer with what you
+can do with that file. drop on an option and the result is saved next to the original. nothing
+is uploaded anywhere.
 
 ## features
 
@@ -114,13 +116,13 @@ optional helpers you install yourself.
 
 ## build from source
 
-requirements: macOS 26 or later, xcode 26 or later, and [XcodeGen](https://github.com/yonaskolb/XcodeGen).
+requirements: macOS 13 or later to run the app. building needs xcode 26 or later and [XcodeGen](https://github.com/yonaskolb/XcodeGen). `scripts/build.sh` produces one universal app (Intel and Apple Silicon).
 
 ```sh
 brew install xcodegen
 git clone https://github.com/sreecharan-desu/yuzu.git
 cd yuzu
-scripts/build.sh          # Release build, ad-hoc signed, into dist/Yuzu.app
+scripts/build.sh          # universal Release build, ad-hoc signed, into dist/Yuzu.app
 open dist/Yuzu.app
 ```
 

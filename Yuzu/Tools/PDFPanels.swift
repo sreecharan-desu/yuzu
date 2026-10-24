@@ -164,7 +164,7 @@ struct OrganizePanel: View {
                     }
                 }
                 .padding(18)
-                .animation(.snappy, value: pages)
+                .animation(.spring(response: 0.32, dampingFraction: 0.86), value: pages)
             }
         } controls: {
             SectionLabel("Pages")
@@ -186,7 +186,7 @@ struct OrganizePanel: View {
             .controlSize(.small)
         }
         .onAppear { if let u = env.urls.first { thumbs.load(u) } }
-        .onChange(of: thumbs.count) { _, _ in reset() }
+        .whenChange(of: thumbs.count) { _ in reset() }
         .onReceive(NotificationCenter.default.publisher(for: .yuzuPanelSet)) { n in
             let info = (n.userInfo as? [String: String]) ?? [:]
             // e.g. select=2,5 rotate=90 then move=8:1 (page 8 to the front)

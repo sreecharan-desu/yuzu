@@ -59,8 +59,16 @@ final class MenuBarController: NSObject, NSMenuDelegate {
         hintItem.attributedTitle = NSAttributedString(
             string: "Drag a file, then tap \(c) convert  \(t) tools  \(a) actions",
             attributes: [.font: NSFont.systemFont(ofSize: 12), .foregroundColor: NSColor.secondaryLabelColor])
-        LoginItem.shared.refresh()
-        loginItem.state = LoginItem.shared.isEnabled ? .on : .off
+        if LoginItem.isSupported {
+            LoginItem.shared.refresh()
+            loginItem.isEnabled = true
+            loginItem.title = "Launch at Login"
+            loginItem.state = LoginItem.shared.isEnabled ? .on : .off
+        } else {
+            loginItem.isEnabled = false
+            loginItem.state = .off
+            loginItem.title = "Launch at Login (macOS 13+)"
+        }
     }
 
     func menuWillOpen(_ menu: NSMenu) { refresh() }
