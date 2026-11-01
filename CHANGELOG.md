@@ -11,6 +11,13 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Collage, video snapshot, export GIF tool, audio visualizer and trim silence.
 - Dragging several Float items out at once, rubber-band selection and Quick Look in Float.
 
+## [1.2.1] - 2026-11-01
+
+Linux build.
+
+### Added
+- `yuzu` command line tool for Linux, shipped as a tar.gz and a .deb.
+
 ## [1.2.0] - 2026-10-24
 
 One download for Intel and Apple Silicon.
@@ -66,7 +73,8 @@ A redesign. Same features, a calmer and more consistent look.
   HEIC to JPEG about 4x faster, WebP about 2x faster.
 - Quick Look thumbnails are cached.
 
-[Unreleased]: https://github.com/sreecharan-desu/yuzu/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/sreecharan-desu/yuzu/compare/v1.2.1...HEAD
+[1.2.1]: https://github.com/sreecharan-desu/yuzu/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/sreecharan-desu/yuzu/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/sreecharan-desu/yuzu/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/sreecharan-desu/yuzu/releases/tag/v1.0.0
