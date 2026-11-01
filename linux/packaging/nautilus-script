@@ -1,0 +1,3 @@
+#!/bin/sh
+# right click > scripts > Convert with Yuzu, in gnome files (nautilus)
+exec yuzu pick "$@"
