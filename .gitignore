@@ -13,3 +13,7 @@ shots/
 # macOS
 .DS_Store
 ._*
+
+# swiftpm (linux build)
+.build/
+.swiftpm/
