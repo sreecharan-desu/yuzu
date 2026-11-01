@@ -47,6 +47,8 @@ jobs:
 
       - name: Install swift
         run: |
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends libcurl4-openssl-dev
           curl -fsSL "https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz" -o swiftly.tar.gz
           tar xzf swiftly.tar.gz
           ./swiftly init --assume-yes --quiet-shell-followup --skip-install
