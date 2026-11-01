@@ -206,6 +206,7 @@ Yuzu/Float      the Float shelf
 Yuzu/HUD        progress and result toasts
 Yuzu/Settings   preferences and the shortcut recorder
 scripts/        build, disk image, icon and fixture scripts
+linux/          linux build: core, yuzu cli, tests, packaging (built by Package.swift)
 ```
 
 ## contributing
