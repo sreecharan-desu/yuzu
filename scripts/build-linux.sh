@@ -32,7 +32,6 @@ if command -v dpkg-deb >/dev/null 2>&1; then
   cp linux/packaging/yuzu.desktop "$deb/usr/share/applications/"
   cp linux/packaging/yuzu.png "$deb/usr/share/icons/hicolor/512x512/apps/"
   cp linux/packaging/nautilus-script "$deb/usr/share/yuzu/"
-  rmdir
   cat > "$deb/DEBIAN/control" <<CTL
 Package: yuzu
 Version: $version
