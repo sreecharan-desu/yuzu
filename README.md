@@ -88,6 +88,63 @@ brew install --cask libreoffice   # optional, for Word, PowerPoint and Excel fil
 
 the welcome window and **settings > about** show which helpers yuzu found.
 
+## linux
+
+there is a separate linux build. it does not have the ring, menu bar icon or float; it converts files
+from a terminal or from your file manager's "open with" menu, using the same rules for naming and
+formats as the mac app. see [docs/linux.md](docs/linux.md) for how it is built and why.
+
+### install
+
+download `yuzu-<version>-linux-x86_64.tar.gz` or `yuzu_<version>_amd64.deb` from the
+[releases page](https://github.com/sreecharan-desu/yuzu/releases).
+
+```sh
+# debian, ubuntu and similar
+sudo apt install ./yuzu_*_amd64.deb
+
+# anything else, installs into ~/.local without sudo
+tar xzf yuzu-*-linux-x86_64.tar.gz
+./yuzu-*-linux-x86_64/install.sh
+```
+
+install the engines you need from your distro, then check what yuzu found:
+
+```sh
+sudo apt install ffmpeg imagemagick pandoc poppler-utils zip unzip zenity libnotify-bin
+sudo apt install libreoffice-core   # optional, for word, powerpoint, excel and pdf export
+yuzu doctor
+```
+
+### use
+
+```sh
+yuzu targets photo.png               # what can this become
+yuzu convert photo.png --to webp     # saves photo.webp next to it
+yuzu convert *.mov --to mp4          # several files run in parallel
+yuzu pick talk.srt                   # pick a format in a dialog
+```
+
+in gnome files, right click a file and use **open with > yuzu** or **scripts > convert with yuzu**.
+
+### build from source
+
+needs a swift toolchain (6.0 or later, free, from [swift.org](https://www.swift.org/install/linux/)
+or `swiftly`).
+
+```sh
+git clone https://github.com/sreecharan-desu/yuzu.git && cd yuzu
+swift test                    # core tests
+swift build -c release        # binary at .build/release/yuzu
+scripts/build-linux.sh        # tests, then dist/*.tar.gz and dist/*.deb
+```
+
+### known limits
+
+- conversions only: no drag ring, tray icon, float shelf or tools and actions rings yet.
+- no pages, keynote or numbers formats. heic needs imagemagick with libheif.
+- release binaries are x86_64 and need a glibc as new as ubuntu 24.04; older systems can build from source.
+
 ## using yuzu
 
 | while dragging a file, tap | ring | what you get |
