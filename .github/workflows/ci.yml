@@ -40,9 +40,49 @@ jobs:
             dist/Yuzu.dmg
             dist/Yuzu.dmg.sha256
 
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install swift
+        run: |
+          curl -fsSL "https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz" -o swiftly.tar.gz
+          tar xzf swiftly.tar.gz
+          ./swiftly init --assume-yes --quiet-shell-followup --skip-install
+          . "$HOME/.local/share/swiftly/env.sh"
+          swiftly install --use --assume-yes 6.1.2
+          echo "$HOME/.local/share/swiftly/bin" >> "$GITHUB_PATH"
+
+      - name: Install test tools
+        run: sudo apt-get install -y --no-install-recommends zip unzip
+
+      - name: Build, test and package
+        run: |
+          swift --version
+          scripts/build-linux.sh
+
+      - name: Smoke test the packaged binary
+        run: |
+          dir=$(mktemp -d)
+          tar -C "$dir" -xzf dist/yuzu-*-linux-*.tar.gz
+          "$dir"/yuzu-*/bin/yuzu --version
+          printf '1\n00:00:01,000 --> 00:00:02,000\nhi\n' > "$dir/a.srt"
+          "$dir"/yuzu-*/bin/yuzu convert "$dir/a.srt" --to vtt
+          grep -q WEBVTT "$dir/a.vtt"
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: Yuzu-linux-${{ github.sha }}
+          path: |
+            dist/yuzu-*-linux-*.tar.gz
+            dist/yuzu_*.deb
+            dist/yuzu-linux.sha256
+
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
+    needs: [build, linux]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -52,6 +92,11 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: Yuzu-${{ github.sha }}
+          path: dist
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: Yuzu-linux-${{ github.sha }}
           path: dist
 
       - name: Release notes from the changelog
@@ -71,7 +116,11 @@ jobs:
         run: |
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
             echo "Release exists; leaving its published assets in place."
+            # attach the linux build if this release predates it
+            gh release upload "$GITHUB_REF_NAME" dist/yuzu-*-linux-*.tar.gz dist/yuzu_*.deb dist/yuzu-linux.sha256 2>/dev/null \
+              || echo "linux assets already attached."
           else
             gh release create "$GITHUB_REF_NAME" dist/Yuzu.dmg dist/Yuzu.dmg.sha256 \
+              dist/yuzu-*-linux-*.tar.gz dist/yuzu_*.deb dist/yuzu-linux.sha256 \
               --title "Yuzu ${GITHUB_REF_NAME#v}" --notes-file notes.md
           fi
