@@ -1,7 +1,7 @@
 import Foundation
 import YuzuLinuxCore
 
-let version = "1.2.0-linux"
+let version = "1.2.1-linux"
 let usage = """
 yuzu \(version), convert files and save the result next to the original.
 
